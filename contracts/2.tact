@@ -33,7 +33,7 @@ contract Task2 with Deployable, Ownable { // todo: could add OwnableTransferable
     send(SendParameters{
         to: msg.sender,
         value: 0,
-        mode: SendRemainingValue,
+        mode: SendRemainingValue + SendIgnoreErrors,
         bounce: true,
         body: beginCell().storeAddress(msg.sender).endCell()
     });
@@ -43,7 +43,7 @@ contract Task2 with Deployable, Ownable { // todo: could add OwnableTransferable
     send(SendParameters{
         to: self.owner,
         value: 0,
-        mode: SendRemainingValue,
+        mode: SendRemainingValue + SendIgnoreErrors,
         bounce: true,
         body: emptyCell()
     });
