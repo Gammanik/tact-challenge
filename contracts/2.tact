@@ -21,7 +21,7 @@ message(0x44) Refund {
   sender: Address;
 }
 
-contract Task2 with Ownable { // todo: could add OwnableTransferable
+contract Task2 with Deployable, Ownable { // todo: could add OwnableTransferable as it's admin but not owner
   owner: Address;
 
   init(owner: Address) {
@@ -33,9 +33,9 @@ contract Task2 with Ownable { // todo: could add OwnableTransferable
     send(SendParameters{
         to: msg.sender,
         value: 0,
-        mode: SendRemainingValue + SendIgnoreErrors,
+        mode: SendRemainingValue,
         bounce: true,
-        body: "Hello, World!".asComment()
+        body: beginCell().storeAddress(msg.sender).endCell()
     });
   }
 
@@ -43,9 +43,9 @@ contract Task2 with Ownable { // todo: could add OwnableTransferable
     send(SendParameters{
         to: self.owner,
         value: 0,
-        mode: SendRemainingValue + SendIgnoreErrors,
+        mode: SendRemainingValue,
         bounce: true,
-        body: "Hello, World!".asComment()
+        body: emptyCell()
     });
   }
 }
