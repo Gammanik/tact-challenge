@@ -25,11 +25,12 @@ contract Task1 with Deployable {
     }
 
     receive(msg: Add) {
-      self.counter = self.counter + 1;
+      // todo: check queryId for persistence? create map of used queryId's?
+      self.counter = self.counter + msg.number;
     }
     
     receive(msg: Subtract) {
-      self.counter = self.counter + 1;
+      self.counter = self.counter - msg.number;
     }
 
     get fun counter(): Int {
