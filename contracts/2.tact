@@ -1,4 +1,5 @@
 import "@stdlib/deploy";
+import "@stdlib/ownable";
 
 /*
   TASK 2 - Proxy 
@@ -20,11 +21,11 @@ message(0x44) Refund {
   sender: Address;
 }
 
-contract Task2 with Deployable {
-  admin: Address;
+contract Task2 with Ownable { // todo: could add OwnableTransferable
+  owner: Address;
 
-  init(admin: Address) {
-    self.admin = admin;
+  init(owner: Address) {
+    self.owner = owner;
   }
   
   receive(msg: Refund) {
@@ -40,7 +41,7 @@ contract Task2 with Deployable {
 
   receive(msg: Slice) {
     send(SendParameters{
-        to: self.admin,
+        to: self.owner,
         value: 0,
         mode: SendRemainingValue + SendIgnoreErrors,
         bounce: true,
