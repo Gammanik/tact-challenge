@@ -28,7 +28,7 @@ contract Task2 with Deployable {
   }
   
   receive(msg: Refund) {
-    // todo: check for admin
+    self.requireOwner();
     send(SendParameters{
         to: msg.sender,
         value: 0,
