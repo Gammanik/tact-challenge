@@ -33,7 +33,7 @@ contract Task2 with Deployable, Ownable { // todo: could add OwnableTransferable
     send(SendParameters{
         to: msg.sender,
         value: 0,
-        mode: SendRemainingValue + SendIgnoreErrors,
+        mode: SendRemainingValue + SendIgnoreErrors, // todo: forward all TONs (attached to Refund message) back to the user
         bounce: true,
         body: beginCell().storeAddress(msg.sender).endCell()
     });
@@ -43,7 +43,7 @@ contract Task2 with Deployable, Ownable { // todo: could add OwnableTransferable
     send(SendParameters{
         to: self.owner,
         value: 0,
-        mode: SendRemainingValue + SendIgnoreErrors,
+        mode: SendRemainingBalance + SendIgnoreErrors,
         bounce: true,
         body: emptyCell()
     });
