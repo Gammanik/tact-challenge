@@ -13,6 +13,8 @@ import "@stdlib/deploy";
   In refund transaction, it is important to have a check that the refund message came from the admin address
 */
 
+// todo: store map of usersForReturn?
+
 message(0x44) Refund {
   queryId: Int as uint64;
   sender: Address;
@@ -26,8 +28,24 @@ contract Task2 with Deployable {
   }
   
   receive(msg: Refund) {
+    // todo: check for admin
+    send(SendParameters{
+        to: msg.sender,
+        value: 0,
+        mode: SendRemainingValue,
+        bounce: true,
+        body: "Hello, World!".asComment()
+    });
   }
 
   receive(msg: Slice) {
+    let value: Int = ton("1");
+    send(SendParameters{
+        to: self.admin,
+        value: value,
+        mode: SendIgnoreErrors,
+        bounce: true,
+        body: "Hello, World!".asComment()
+    });
   }
 }
