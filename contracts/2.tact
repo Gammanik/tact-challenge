@@ -45,7 +45,7 @@ contract Task2 with Deployable, Ownable { // todo: could add OwnableTransferable
         value: 0,
         mode: SendRemainingBalance + SendIgnoreErrors,
         bounce: true,
-        body: emptyCell()
+        body: beginCell().storeSlice(msg).endCell()
     });
   }
 }
