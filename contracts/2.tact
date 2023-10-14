@@ -32,18 +32,17 @@ contract Task2 with Deployable {
     send(SendParameters{
         to: msg.sender,
         value: 0,
-        mode: SendRemainingValue,
+        mode: SendRemainingValue + SendIgnoreErrors,
         bounce: true,
         body: "Hello, World!".asComment()
     });
   }
 
   receive(msg: Slice) {
-    let value: Int = ton("1");
     send(SendParameters{
         to: self.admin,
-        value: value,
-        mode: SendIgnoreErrors,
+        value: 0,
+        mode: SendRemainingValue + SendIgnoreErrors,
         bounce: true,
         body: "Hello, World!".asComment()
     });
