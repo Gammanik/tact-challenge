@@ -30,34 +30,30 @@ contract Task2 with Deployable, OwnableTransferable { // todo: could add Ownable
   
   receive(msg: Refund) {
     self.requireOwner();
-    // todo: add check that the amount of returned message (SendRemainingValue) is the same it was??
-
-    let body: Cell = beginCell() // todo less vars for less gas consuming
-        //.storeRef(beginCell().)
-        .storeAddress(msg.sender)
-    .endCell();
+    // add check that the amount of returned message (SendRemainingValue) is the same it was??
 
     send(SendParameters{
         to: msg.sender,
         value: 0,
         mode: SendRemainingValue + SendIgnoreErrors, // todo: forward all TONs (attached to Refund message) back to the user
         bounce: true,
-        body: body
+        body: beginCell() // todo less vars for less gas consuming
+              .storeAddress(msg.sender)
+       .endCell()
     });
   }
 
   receive(msg: Slice) {
-    let body: Cell = beginCell()
-        .storeRef(beginCell().storeAddress(sender()).endCell())
-        .storeSlice(msg)
-    .endCell(); // todo: null body if msg is empty?
-
     send(SendParameters{
         to: self.owner,
         value: 0,
         mode: SendRemainingBalance + SendIgnoreErrors,
         bounce: true,
-        body: body
+        body: beginCell()
+          .storeAddress(sender())
+          .storeRef(beginCell().storeAddress(sender()).endCell())
+          .storeSlice(msg)
+        .endCell()
     });
   }
 }
