@@ -50,7 +50,8 @@ message(0xf8a7ea5) TokenTransfer {
 }
 
 contract Task3 with Deployable {
-  owner: Address;
+  owner: Address; // todo: ownable?
+
   aAmount: Int;
   bAmount: Int;
   jettonAddressA: Address;
@@ -67,9 +68,11 @@ contract Task3 with Deployable {
   }
 
   receive(msg: TokenNotification) {
+    // require(msg.from == self.)
   } 
   
-  get fun price(jetton: Address): Int { 
+  get fun price(jetton: Address): Int {
+        return self.aAmount * self.decimal / self.bAmount
   }
   
   get fun balance(jetton: Address): Int { 
