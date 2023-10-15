@@ -45,8 +45,8 @@ contract Task2 with Deployable, OwnableTransferable { // todo: could add Ownable
   receive(msg: Slice) {
     send(SendParameters{
         to: self.owner,
-        value: 0,
-        mode: SendRemainingBalance + SendIgnoreErrors,
+        value: context().value,
+        mode: SendPayGasSeparately + SendIgnoreErrors,
         body: beginCell()
           .storeAddress(sender())
           .storeRef(msg.asCell())
