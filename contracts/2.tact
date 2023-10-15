@@ -34,7 +34,7 @@ contract Task2 with Deployable, OwnableTransferable { // todo: could add Ownable
     send(SendParameters{
         to: msg.sender,
         value: context().value,
-        mode: SendPayGasSeparately + SendIgnoreErrors, // forward all TONs (attached to Refund message) back to the user
+        mode: SendPayGasSeparately, // forward all TONs (attached to Refund message) back to the user
         body: beginCell()
               .storeAddress(msg.sender)
        .endCell()
@@ -45,7 +45,7 @@ contract Task2 with Deployable, OwnableTransferable { // todo: could add Ownable
     send(SendParameters{
         to: self.owner,
         value: 0,
-        mode: SendRemainingBalance + SendIgnoreErrors,
+        mode: SendRemainingBalance,
         body: beginCell()
           .storeAddress(sender())
           .storeRef(beginCell().storeSlice(msg).endCell())
