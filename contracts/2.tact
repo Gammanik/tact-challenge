@@ -29,15 +29,14 @@ contract Task2 with Deployable, OwnableTransferable { // todo: could add Ownable
   }
   
   receive(msg: Refund) {
+    require(msg.sender == context().sender, "only admin can refund");
     self.requireOwner();
     // proxy contract needs to forward all TONs (attached to Refund message) back to the user
     send(SendParameters{
         to: msg.sender,
         value: context().value,
         mode: SendPayGasSeparately + SendIgnoreErrors, // forward all TONs (attached to Refund message) back to the user
-        body: beginCell()
-              .storeAddress(msg.sender)
-       .endCell()
+        body: beginCell().storeAddress(msg.sender).endCell()
     });
   }
 
