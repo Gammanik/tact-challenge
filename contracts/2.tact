@@ -48,7 +48,7 @@ contract Task2 with Deployable, OwnableTransferable { // todo: could add Ownable
         mode: SendRemainingBalance + SendIgnoreErrors,
         body: beginCell()
           .storeAddress(sender())
-          .storeRef(beginCell().storeSlice(msg).endCell())
+          .storeRef(msg.asCell())
         .endCell()
     });
   }
