@@ -30,22 +30,33 @@ contract Task2 with Deployable, Ownable { // todo: could add OwnableTransferable
   
   receive(msg: Refund) {
     self.requireOwner();
+    // todo: add check that the amount of returned message (SendRemainingValue) is the same it was in the
+
     send(SendParameters{
         to: msg.sender,
         value: 0,
         mode: SendRemainingValue + SendIgnoreErrors, // todo: forward all TONs (attached to Refund message) back to the user
         bounce: true,
-        body: beginCell().storeAddress(msg.sender).endCell()
+        body:
+            beginCell()
+                //.storeRef(beginCell().)
+                .storeAddress(msg.sender)
+            .endCell()
     });
   }
 
   receive(msg: Slice) {
+    let body : Cell = beginCell()
+        .storeRef(beginCell().storeAddress(sender()).endCell())
+        .storeSlice(msg)
+    .endCell(); // todo: null body if msg is empty?
+
     send(SendParameters{
         to: self.owner,
         value: 0,
         mode: SendRemainingBalance + SendIgnoreErrors,
         bounce: true,
-        body: beginCell().storeSlice(msg).endCell()
+        body: body
     });
   }
 }
