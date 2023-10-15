@@ -30,7 +30,6 @@ contract Task2 with Deployable, OwnableTransferable { // todo: could add Ownable
   
   receive(msg: Refund) {
     self.requireOwner();
-    // add check that the amount of returned message (SendRemainingValue) is the same it was??
 
     send(SendParameters{
         to: msg.sender,
@@ -46,7 +45,7 @@ contract Task2 with Deployable, OwnableTransferable { // todo: could add Ownable
     send(SendParameters{
         to: self.owner,
         value: 0,
-        mode: SendPayGasSeparately + SendIgnoreErrors,
+        mode: SendRemainingValue + SendIgnoreErrors,
         body: beginCell()
           .storeAddress(sender())
           .storeRef(beginCell().storeAddress(sender()).endCell())
