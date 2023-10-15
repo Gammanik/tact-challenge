@@ -30,7 +30,6 @@ contract Task2 with Deployable, OwnableTransferable { // todo: could add Ownable
   
   receive(msg: Refund) {
     self.requireOwner();
-
     // proxy contract needs to forward all TONs (attached to Refund message) back to the user
     send(SendParameters{
         to: msg.sender,
@@ -45,8 +44,8 @@ contract Task2 with Deployable, OwnableTransferable { // todo: could add Ownable
   receive(msg: Slice) {
     send(SendParameters{
         to: self.owner,
-        value: 0,
-        mode: SendRemainingValue + SendIgnoreErrors,
+        value: context().value,
+        mode: SendPayGasSeparately + SendIgnoreErrors,
         body: beginCell()
           .storeAddress(sender())
           .storeRef(beginCell().storeAddress(sender()).endCell())
