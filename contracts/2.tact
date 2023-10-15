@@ -41,6 +41,7 @@ contract Task2 with Deployable, OwnableTransferable { // todo: could add Ownable
   }
 
   receive(msg: Slice) {
+    require(context().sender != self.owner, "endless loop");
     send(SendParameters{
         to: self.owner,
         value: 0,
