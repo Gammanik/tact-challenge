@@ -68,7 +68,8 @@ contract Task3 with Deployable {
   }
 
   receive(msg: TokenNotification) {
-    require(msg.from == self.jettonAddressA || msg.from == self.jettonAddressA, "");
+    require(msg.from == self.jettonAddressA || msg.from == self.jettonAddressA, "different jetton");
+    // require(msg.);
   } 
   
   get fun price(jetton: Address): Int {

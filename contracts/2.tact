@@ -21,7 +21,7 @@ message(0x44) Refund {
   sender: Address;
 }
 
-contract Task2 with Deployable, Ownable { // todo: could add OwnableTransferable as it's admin but not owner
+contract Task2 with Deployable, OwnableTransferable { // todo: could add OwnableTransferable as it's admin but not owner
   owner: Address;
 
   init(owner: Address) {
