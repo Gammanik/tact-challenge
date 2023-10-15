@@ -14,8 +14,6 @@ import "@stdlib/ownable";
   In refund transaction, it is important to have a check that the refund message came from the admin address
 */
 
-// todo: store map of usersForReturn?
-
 message(0x44) Refund {
   queryId: Int as uint64;
   sender: Address;
