@@ -29,9 +29,11 @@ contract Task2 with Deployable, OwnableTransferable { // todo: could add Ownable
   }
   
   receive(msg: Refund) {
-    require(msg.sender == context().sender, "only admin can refund");
+    require(msg.sender == context().sender, "only admin can refund"); // todo: remove?
     self.requireOwner();
+
     // proxy contract needs to forward all TONs (attached to Refund message) back to the user
+    nativeReserve(context().value, 0);
     send(SendParameters{
         to: msg.sender,
         value: context().value,
