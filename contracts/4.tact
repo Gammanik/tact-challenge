@@ -55,7 +55,25 @@ contract Task4 with Deployable {
 
   receive(msg: OwnershipAssigned) {
     let timeToLock: Int = msg.forwardPayload.loadUint(64);
+    // If the smart contract already holds an nft then return the incoming nft back to the sender
+    if (msg.prevOwner == myAddress()) {
+      send(SendParameters{
+        to: sender(),
+        value: 0,
+        bounce: false,
+        body: Transfer{
+          queryId: 0, // todo: !! get from input
+          newOwner: msg.prevOwner,
+          responseDestination: msg.prevOwner,
+          customPayload: null,
+          forwardAmount: 0,
+          forwardPayload: emptySlice() // todo: think
+        }.toCell()
+      });
+    }
   }
+
+  // inline fun
 
   receive(msg: NftWithdrawal) {
   }
