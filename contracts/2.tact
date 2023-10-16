@@ -32,9 +32,8 @@ contract Task2 with Deployable {
     // proxy contract needs to forward all TONs (attached to Refund message) back to the user
     send(SendParameters{
         to: msg.sender,
-        value: context().value,
-        mode: SendPayGasSeparately + SendIgnoreErrors,
-        body: beginCell().storeAddress(msg.sender).endCell()
+        value: 0,
+        mode: SendRemainingValue + SendIgnoreErrors
     });
   }
 
@@ -42,7 +41,7 @@ contract Task2 with Deployable {
     send(SendParameters{
         to: self.admin,
         value: 0,
-        mode: SendRemainingBalance + SendIgnoreErrors,
+        mode: SendRemainingValue + SendIgnoreErrors,
         body: beginCell()
                 .storeAddress(sender())
                 .storeRef(msg.asCell())
