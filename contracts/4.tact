@@ -54,6 +54,7 @@ contract Task4 with Deployable {
   }
 
   receive(msg: OwnershipAssigned) {
+
   }
 
   receive(msg: NftWithdrawal) {
