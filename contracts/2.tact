@@ -20,17 +20,16 @@ message(0x44) Refund {
 }
 
 contract Task2 with Deployable {
-  owner: Address;
+  admin: Address;
 
-  init(owner: Address) {
-    self.owner = owner;
+  init(admin: Address) {
+    self.admin = admin;
   }
   
   receive(msg: Refund) {
-    require(context().sender == self.owner, "only admin can refund");
+    require(context().sender == self.admin, "only admin can refund");
 
     // proxy contract needs to forward all TONs (attached to Refund message) back to the user
-    nativeReserve(context().value, 0);
     send(SendParameters{
         to: msg.sender,
         value: context().value,
@@ -41,13 +40,13 @@ contract Task2 with Deployable {
 
   receive(msg: Slice) {
     send(SendParameters{
-        to: self.owner,
-        value: 0,
+        to: self.admin,
+        value: myBalance() - context().value,
         mode: SendRemainingValue + SendIgnoreErrors,
         body: beginCell()
-          .storeAddress(sender())
-          .storeRef(msg.asCell())
-        .endCell()
+                .storeAddress(sender())
+                .storeRef(msg.asCell())
+              .endCell()
     });
   }
 }

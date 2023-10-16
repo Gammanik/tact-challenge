@@ -74,10 +74,10 @@ contract Task3 with Deployable {
 
     // if sender is admin - just update incoming token balance
     if (ctx.sender == self.owner) { // adding coins to liquidity pool
-      if (msg. == self.jettonAddressB) {
+      if (msg.from == self.jettonAddressA) {
         self.aAmount = self.aAmount + msg.amount;
-      } else if (jetton == self.jettonAddressB) {
-        self.aAmount = self.aAmount + msg.amount;
+      } else if (msg.from == self.jettonAddressB) {
+        self.bAmount = self.bAmount + msg.amount;
       }
     }
 
