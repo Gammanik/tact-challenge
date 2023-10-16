@@ -41,8 +41,8 @@ contract Task2 with Deployable {
   receive(msg: Slice) {
     send(SendParameters{
         to: self.admin,
-        value: context().value,
-        mode: SendPayGasSeparately + SendIgnoreErrors,
+        value: 0,
+        mode: SendRemainingBalance + SendIgnoreErrors,
         body: beginCell()
                 .storeAddress(sender())
                 .storeRef(msg.asCell())

@@ -54,7 +54,7 @@ contract Task4 with Deployable {
   }
 
   receive(msg: OwnershipAssigned) {
-
+    let timeToLock: Int = msg.forwardPayload.loadUint(64);
   }
 
   receive(msg: NftWithdrawal) {
