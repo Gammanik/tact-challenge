@@ -19,7 +19,7 @@ message(0x44) Refund {
   sender: Address;
 }
 
-contract Task2 with Deployable, OwnableTransferable { // todo: could add OwnableTransferable as it's admin but not owner
+contract Task2 with Deployable {
   owner: Address;
 
   init(owner: Address) {
@@ -27,21 +27,19 @@ contract Task2 with Deployable, OwnableTransferable { // todo: could add Ownable
   }
   
   receive(msg: Refund) {
-    require(context().sender == self.owner, "only admin can refund"); // todo: remove?
-    self.requireOwner();
+    require(context().sender == self.owner, "only admin can refund");
 
     // proxy contract needs to forward all TONs (attached to Refund message) back to the user
     nativeReserve(context().value, 0);
     send(SendParameters{
         to: msg.sender,
         value: context().value,
-        mode: SendPayGasSeparately + SendIgnoreErrors, // forward all TONs (attached to Refund message) back to the user
+        mode: SendPayGasSeparately + SendIgnoreErrors,
         body: beginCell().storeAddress(msg.sender).endCell()
     });
   }
 
   receive(msg: Slice) {
-    require(context().sender != self.owner, "endless loop");
     send(SendParameters{
         to: self.owner,
         value: 0,

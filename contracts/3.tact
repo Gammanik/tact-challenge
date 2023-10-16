@@ -69,7 +69,24 @@ contract Task3 with Deployable {
 
   receive(msg: TokenNotification) {
     require(msg.from == self.jettonAddressA || msg.from == self.jettonAddressA, "different jetton");
-    // require(msg.);
+    require(msg.amount > 0, "amount can't be negative");
+    let ctx: Context = context();
+
+    // if sender is admin - just update incoming token balance
+    if (ctx.sender == self.owner) { // adding coins to liquidity pool
+      if (msg. == self.jettonAddressB) {
+        self.aAmount = self.aAmount + msg.amount;
+      } else if (jetton == self.jettonAddressB) {
+        self.aAmount = self.aAmount + msg.amount;
+      }
+    }
+
+    /* - calculate swap price (as per spec) if it is greater than dest token balance - send incoming tokens back to prev owner
+       - otherwise send dest tokens to owner
+       - update balances accordingly
+    */
+
+
   } 
   
   get fun price(jetton: Address): Int {
@@ -83,8 +100,7 @@ contract Task3 with Deployable {
       return self.bAmount;
     }
 
-    throw(0);
-    return 0;
+    throw(0); return 0;
   }
 
 }
