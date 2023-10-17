@@ -95,26 +95,20 @@ contract Task3 with Deployable {
     amountOfAToSend = (amountA * decimal / amountB) * amountOfTokenBToSwap / decimal
   */
   inline fun buy(t: TokenNotification) { // A->B swap ; swapAm: f.from == a.addr ? b.price * t.am : a.price * t.am
-      let clAddress: Address = self.collateralAddress(t.from); // collateralAddress
+      let clAddress: Address = self.collateralAddress(sender()); // collateralAddress
       let clPrice: Int = self.price(clAddress); // collateralPrice
       let amountWantToBuy: Int = clPrice * t.amount / self.decimal;
 
       if (amountWantToBuy > self.balance(self.collateralAddress(sender()))) { // todo:
           self.refundTokens(t.amount);
       } else {
-          self.executeBuy(amountWantToBuy, t.amount, t.from);
+          self.executeBuy(amountWantToBuy, t.amount);
       }
   }
 
-  // collateral token address: collateralAddress(a) -> b
-  inline fun collateralAddress(adr: Address): Address { // to get the price I need collaterall address ; the fun would not be needed if there was ternary operator
-    if adr == self.jettonAddressA { return self.jettonAddressB; }
-    return self.jettonAddressA;
-  }
-
-  inline fun executeBuy(amountBought: Int, staked: Int, buyerAddress: Address) {
-      self.tokenTransfer(amountBought, buyerAddress);
-      if (buyerAddress == self.jettonAddressA) { // if message came from A
+  inline fun executeBuy(amountBought: Int, staked: Int) {
+      self.tokenTransfer(amountBought, sender());
+      if (sender() == self.jettonAddressA) { // if message came from A
           self.aAmount = self.aAmount + staked; // a->b: staked A withdraw B
           self.bAmount = self.bAmount - amountBought;
       } else {
@@ -169,6 +163,12 @@ contract Task3 with Deployable {
       return self.bAmount;
     }
     throw(0); return 0;
+  }
+
+  // collateral token address: collateralAddress(a) -> b
+  inline fun collateralAddress(adr: Address): Address { // to get the price I need collaterall address ; the fun would not be needed if there was ternary operator
+    if adr == self.jettonAddressA { return self.jettonAddressB; }
+    return self.jettonAddressA;
   }
 
 }
