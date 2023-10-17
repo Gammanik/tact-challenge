@@ -74,7 +74,7 @@ contract Task3 with Deployable {
       self.validateToken(t.from);
       if (self.isAdmin()) {
         self.updateLiquidity(t);
-      } else {
+      } else { //
         self.processBuy(t);
     }
   }
@@ -164,6 +164,7 @@ contract Task3 with Deployable {
   }
 
   inline fun validateToken(tokenAddress: Address) {
+    require(sender() == tokenAddress);
     require(tokenAddress == self.jettonAddressA || tokenAddress == self.jettonAddressB, "Invalid token");
   }
   inline fun isAdmin(): Bool { return context().sender == self.owner; }
