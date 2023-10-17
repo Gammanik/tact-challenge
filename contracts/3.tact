@@ -88,10 +88,10 @@ contract Task3 with Deployable {
   }
 
   inline fun processBuy(t: TokenNotification) {
-      if (t.from == self.jettonAddressA) { // if send A buy B
-          self.buy(self.bAmount, self.aAmount, t); // want to buy B for A  || a -> b
+      if (t.from == self.jettonAddressA) { // if sent from A buy B
+          self.buy(self.bAmount, t.amount, t); // want to buy B for A  || a -> b
       } else {
-          self.buy(self.aAmount, self.bAmount, t); // want to buy A sell B || b -> a
+          self.buy(self.aAmount, t.amount, t); // want to buy A sell B || b -> a
       }
   }
 
