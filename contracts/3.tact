@@ -33,10 +33,10 @@ import "@stdlib/deploy";
   To be exact: any jettons (A or B) received from the admin are "added". Admin can't swap.
 */
 
-message(0x7362d09c) TokenNotification {
+message(0x7362d09c) TokenNotification { // the sender() is always A or B but .from is prevOwner
     queryId: Int as uint64;
     amount: Int as coins;
-    from: Address; //
+    from: Address; // or from is A || B?
     forwardPayload: Slice as remaining;
 }
 
@@ -99,7 +99,7 @@ contract Task3 with Deployable {
       let clPrice: Int = self.price(clAddress); // collateralPrice
       let amountWantToBuy: Int = clPrice * t.amount / self.decimal;
 
-      if (amountWantToBuy > self.balance(self.collateralAddress(t.from))) { // todo:
+      if (amountWantToBuy > self.balance(self.collateralAddress(sender()))) { // todo:
           self.refundTokens(t.amount);
       } else {
           self.executeBuy(amountWantToBuy, t.amount, t.from);
