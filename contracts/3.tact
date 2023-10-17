@@ -71,7 +71,7 @@ contract Task3 with Deployable {
 
   /* MAIN LOGIC */
   receive(t: TokenNotification) {
-      require(sender() == self.jettonAddressA || tokenAddress == self.jettonAddressB, "Invalid token");
+      require(sender() == self.jettonAddressA || sender() == self.jettonAddressB, "Invalid token");
       if (t.from == self.owner) { // admin can't buy | only deposit
         self.deposit(t.amount);
       } else { // buy collateral with t.amount
