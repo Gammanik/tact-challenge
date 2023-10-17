@@ -39,20 +39,21 @@ message(0x7362d09c) TokenNotification {
     forwardPayload: Slice as remaining;
 }
 
+// To simplify the testing process and the specificity of the messages being sent, we decided to add clear default values in this transaction
 message(0xf8a7ea5) TokenTransfer {
-    queryId: Int as uint64;
-    amount: Int as coins;
-    destination: Address;
-    responseDestination: Address?;
-    customPayload: Cell?;
-    forwardTonAmount: Int as coins;
-    forwardPayload: Slice as remaining;
+     queryId: Int as uint64; // should be 0
+     amount: Int as coins; // should be amount of jettons to send
+     destination: Address; // should be user address / TokenNotification.from
+     responseDestination: Address?; // should be myAddress()
+     customPayload: Cell?; // should be null
+     forwardTonAmount: Int as coins; // should be ton("0.01")
+     forwardPayload: Slice as remaining; // should be emptySlice()
 }
 
 contract Task3 with Deployable {
-  owner: Address; // todo: ownable?
+  owner: Address;
 
-  aAmount: Int;
+  aAmount: Int; // refactor make: a{amount, address}, b{amount, address}
   bAmount: Int;
   jettonAddressA: Address;
   jettonAddressB: Address;
@@ -67,40 +68,101 @@ contract Task3 with Deployable {
     self.decimal = 1000000000;
   }
 
-  receive(msg: TokenNotification) {
-    require(msg.from == self.jettonAddressA || msg.from == self.jettonAddressA, "different jetton");
-    require(msg.amount > 0, "amount can't be negative");
-    let ctx: Context = context();
-
-    // if sender is admin - just update incoming token balance
-    if (ctx.sender == self.owner) { // adding coins to liquidity pool
-      if (msg.from == self.jettonAddressA) {
-        self.aAmount = self.aAmount + msg.amount;
-      } else if (msg.from == self.jettonAddressB) {
-        self.bAmount = self.bAmount + msg.amount;
-      }
+  receive(t: TokenNotification) {
+      self.validateToken(t.from);
+      if (self.isAdmin()) {
+        self.updateLiquidity(t);
+      } else {
+        self.processSwap(t);
     }
-
-    /* - calculate swap price (as per spec) if it is greater than dest token balance - send incoming tokens back to prev owner
-       - otherwise send dest tokens to owner
-       - update balances accordingly
-    */
-
-
-  } 
-  
-  get fun price(jetton: Address): Int {
-    return self.aAmount * self.decimal / self.bAmount;
   }
-  
+
+  inline fun updateLiquidity(t: TokenNotification) {
+      if (t.from == self.jettonAddressA) {
+        self.aAmount = self.aAmount + t.amount;
+      } else {
+        self.bAmount = self.bAmount + t.amount;
+      }
+  }
+
+  inline fun processSwap(t: TokenNotification) {
+      if (t.from == self.jettonAddressA) { // has send a token
+          self.swap(self.aAmount, self.bAmount, t); // a -> b lock b
+      } else {
+          self.swap(self.bAmount, self.aAmount, t); // b -> a lock(a)
+      }
+  }
+
+  // 10b 2a ||  aToSend = price_a-b * amount_b_deposited
+
+  /*Example formula for amountOfAToSend in B->A swap will be
+  (amountOfAOnContract * decimal / amountOfBOnContract) * amountOfTokenBToSwap / decimal */
+  inline fun swap(aAmount: Int, bAmount: Int, t: TokenNotification) { // B->A swap
+      let amountOfAToSend : Int = (aAmount * self.decimal / bAmount) * t.amount / self.decimal;
+
+      if (amountOfAToSend > self.balance(t.from)) {
+          self.refundTokens(t.amount);
+      } else {
+          self.executeSwap(t.from, amountOfAToSend, t.amount);
+      }
+  }
+
+  inline fun refundTokens(amount: Int) {
+      self.tokenTransfer(amount, context().sender);
+  }
+
+  inline fun executeSwap(tokenAddress: Address, amountToSend: Int, swapAmount: Int) {
+      self.tokenTransfer(amountToSend, tokenAddress);
+      if (tokenAddress == self.jettonAddressA) {
+          self.aAmount = self.aAmount - amountToSend;
+          self.bAmount = self.bAmount + swapAmount;
+      } else {
+          self.bAmount = self.bAmount - amountToSend;
+          self.aAmount = self.aAmount + swapAmount;
+      }
+  }
+
+  inline fun tokenTransfer(amountToSend: Int, destination: Address) {
+      send(SendParameters{
+          to: destination,
+          value: 0,
+          mode: SendRemainingValue,
+          bounce: true,
+          body: TokenTransfer{
+              queryId: 0,
+              amount: amountToSend,
+              destination: destination,
+              responseDestination: myAddress(),
+              customPayload: null,
+              forwardTonAmount: ton("0.01"),
+              forwardPayload: emptySlice()
+          }.toCell()
+      });
+  }
+
+  get fun price(jetton: Address): Int {
+    if (jetton == self.jettonAddressA) {
+      require(self.bAmount != 0, "div by 0");
+      return self.aAmount * self.decimal / self.bAmount;
+    } else if (jetton == self.jettonAddressB) {
+      require(self.aAmount != 0, "div by 0");
+      return self.bAmount * self.decimal / self.aAmount;
+    }
+    throw(0); return 0;
+  }
+
   get fun balance(jetton: Address): Int {
     if (jetton == self.jettonAddressA) {
       return self.aAmount;
     } else if (jetton == self.jettonAddressB) {
       return self.bAmount;
     }
-
     throw(0); return 0;
   }
+
+  inline fun validateToken(tokenAddress: Address) {
+    require(tokenAddress == self.jettonAddressA || tokenAddress == self.jettonAddressB, "Invalid token");
+  }
+  inline fun isAdmin(): Bool { return context().sender == self.owner; }
 
 }
