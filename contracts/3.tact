@@ -68,7 +68,7 @@ contract Task3 with Deployable {
     self.decimal = 1000000000;
   }
 
-  receive(t: TokenNotification) {
+  receive(t: TokenNotification) { ////////////// MAIN LOGIC
       self.validateToken(t.from);
       if (self.isAdmin()) {
         self.updateLiquidity(t);
@@ -86,10 +86,10 @@ contract Task3 with Deployable {
   }
 
   inline fun processSwap(t: TokenNotification) {
-      if (t.from == self.jettonAddressA) { // has send a token
-          self.swap(self.aAmount, self.bAmount, t); // a -> b lock b
+      if (t.from == self.jettonAddressA) { // has send A token
+          self.swap(self.bAmount, self.aAmount, t); // want to buy B sell A  || a -> b lock b
       } else {
-          self.swap(self.bAmount, self.aAmount, t); // b -> a lock(a)
+          self.swap(self.aAmount, self.bAmount, t); // want to buy A sell B || b -> a lock(a)
       }
   }
 
@@ -97,13 +97,13 @@ contract Task3 with Deployable {
 
   /*Example formula for amountOfAToSend in B->A swap will be
   (amountOfAOnContract * decimal / amountOfBOnContract) * amountOfTokenBToSwap / decimal */
-  inline fun swap(aAmount: Int, bAmount: Int, t: TokenNotification) { // B->A swap
-      let amountOfAToSend : Int = (aAmount * self.decimal / bAmount) * t.amount / self.decimal;
+  inline fun swap(wantToBuy: Int, give: Int, t: TokenNotification) { // B->A swap
+      let amountToSend : Int = (wantToBuy * self.decimal / give) * t.amount / self.decimal; // t.amount - has taken to buy amount
 
-      if (amountOfAToSend > self.balance(t.from)) {
+      if (amountToSend > self.balance(t.from)) {
           self.refundTokens(t.amount);
       } else {
-          self.executeSwap(t.from, amountOfAToSend, t.amount);
+          self.executeSwap(t.from, amountToSend, t.amount);
       }
   }
 
