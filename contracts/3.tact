@@ -74,8 +74,8 @@ contract Task3 with Deployable {
       self.validateToken(t.from);
       if (self.isAdmin()) {
         self.updateLiquidity(t);
-      } else { //
-        self.processBuy(t);
+      } else { // buy collateral with t.amount
+        self.buy(t);
     }
   }
 
@@ -87,41 +87,43 @@ contract Task3 with Deployable {
       }
   }
 
-  inline fun processBuy(t: TokenNotification) {
-      if (t.from == self.jettonAddressA) { // if sent from A buy B
-          self.buy(self.bAmount, t.amount, t); // want to buy B for A  || a -> b
+  /*
+    amounts: 10b 2a || aToSend = price_a * amount_b_deposited
+      -got 2a for change:
+        b_to_return = 10 = (10/2) * 2 = price_(b) * deposited
+    Example formula for amountOfAToSend in B->A swap will be
+    amountOfAToSend = (amountA * decimal / amountB) * amountOfTokenBToSwap / decimal
+  */
+  inline fun buy(t: TokenNotification) { // B->A swap
+      let collateralPrice: Int = self.price(self.collateralAddress(t.from));
+      let amountToBuy: Int = collateralPrice * t.amount / self.decimal;
+
+      if (amountToBuy > self.balance(t.from)) {
+          self.refundTokens(t.amount);
       } else {
-          self.buy(self.aAmount, t.amount, t); // want to buy A sell B || b -> a
+          self.executeBuy(amountToBuy, t.amount, t.from);
       }
   }
 
-  // 10b 2a ||  aToSend = price_a-b * amount_b_deposited
+  // collateral token address: collateralAddress(a) -> b
+  inline fun collateralAddress(adr: Address): Address { // to get the price I need collaterall address ; the fun would not be needed if there was ternary operator
+    if adr == self.jettonAddressA { return self.jettonAddressB; }
+    return self.jettonAddressA;
+  }
 
-  /*Example formula for amountOfAToSend in B->A swap will be
-  (amountOfAOnContract * decimal / amountOfBOnContract) * amountOfTokenBToSwap / decimal */
-  inline fun buy(wantToBuy: Int, give: Int, t: TokenNotification) { // B->A swap
-      let amountToSend : Int = (wantToBuy * self.decimal / give) * t.amount / self.decimal; // t.amount - has taken to buy amount
-
-      if (amountToSend > self.balance(t.from)) {
-          self.refundTokens(t.amount);
-      } else {
-          self.executeBuy(t.from, amountToSend, t.amount);
+  inline fun executeBuy(amountBought: Int, collateral: Int, buyerAddress: Address) {
+      self.tokenTransfer(amountBought, buyerAddress);
+      if (buyerAddress == self.jettonAddressA) { // if message came from A could only buy b tokens
+          self.bAmount = self.bAmount - amountBought; // bought b with his msg.a.amount
+          self.bAmount = self.bAmount + collateral;
+      } else { // bought a with b
+          self.aAmount = self.aAmount - amountBought;
+          self.bAmount = self.bAmount + collateral;
       }
   }
 
   inline fun refundTokens(amount: Int) {
       self.tokenTransfer(amount, context().sender);
-  }
-
-  inline fun executeBuy(buyerAddress: Address, amountToSend: Int, collateral: Int) {
-      self.tokenTransfer(amountToSend, buyerAddress);
-      if (buyerAddress == self.jettonAddressA) { // if address A then was send to A
-          self.aAmount = self.aAmount - amountToSend;
-          self.bAmount = self.bAmount + collateral;
-      } else {
-          self.bAmount = self.bAmount - amountToSend;
-          self.aAmount = self.aAmount + collateral;
-      }
   }
 
   inline fun tokenTransfer(amountToSend: Int, destination: Address) {
@@ -142,8 +144,13 @@ contract Task3 with Deployable {
       });
   }
 
-  // priceB = aAmn / bAmn ;; 1btc 10eth pBtc = 10eth / 1btc ;; pa = 1b/10a
-  get fun price(jetton: Address): Int {
+  /*
+      todo: optimise getters for them not to work with div as it's heavy?
+      b.price_to_a = a.amount / b.amount ;;
+  */
+  // 1a 10b => price_of_b_to_a = 0.1a = 1b / 10a =
+  // priceOf(jetton: Address)
+  get fun price(jetton: Address): Int { // is it the price for address? like if I'm sending from `a` I should get `a` price in `b`?
     if (jetton == self.jettonAddressA) {
       require(self.bAmount == 0, "div by 0");
       return self.aAmount * self.decimal / self.bAmount;
@@ -164,7 +171,7 @@ contract Task3 with Deployable {
   }
 
   inline fun validateToken(tokenAddress: Address) {
-    require(sender() == tokenAddress);
+    require(sender() == tokenAddress, "sender should be token address");
     require(tokenAddress == self.jettonAddressA || tokenAddress == self.jettonAddressB, "Invalid token");
   }
   inline fun isAdmin(): Bool { return context().sender == self.owner; }
