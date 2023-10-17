@@ -48,8 +48,8 @@ message NftWithdrawal {
 
 contract Task4 with Deployable {
   seed: Int as uint128;
-  timeTillLockEnds: Int?; // todo: could make just one nullable struct instead
-  prevOwner: Address?;
+  timeLockEnds: Int?; // todo: could make just one nullable struct instead
+  prevOwner: Address?; // also used to check if anything is locked at all (if not null)
 
 
   init(seed: Int) {
@@ -58,24 +58,25 @@ contract Task4 with Deployable {
 
   receive(msg: OwnershipAssigned) {
     require(sender() == msg.prevOwner, "as per TEP-62 sender() == prevOwner");
-    self.timeTillLockEnds = now() + msg.forwardPayload.loadUint(64);
+    // timeLockEnds = now() + timeForWhichToLock
+    self.timeLockEnds = now() + msg.forwardPayload.loadUint(64);
     self.prevOwner = msg.prevOwner;
     self.rejectIfAlreadyHolds(msg);
   }
 
   receive(msg: NftWithdrawal) {
     require(sender() == self.prevOwner,"sender is not the owner"); // if sender is not the owner (that came from OwnershipAssigned as prevOwner address) then throw "Invalid sender"
-    if (now() < self.timeTillLockEnds!!) { self.reply("NFT is still locked".asComment()); }
+    if (now() < self.timeLockEnds!!) { self.reply("NFT is still locked".asComment()); }
     self.unlock(msg);
   }
 
   get fun time(): Int { // get how much lock time is left
-    if (self.timeTillLockEnds == null) { return 0; }
-    return self.timeTillLockEnds!! - now();
+    if (self.timeLockEnds == null) { return 0; }
+    return self.timeLockEnds!! - now();
   }
 
   get fun nft(): Address? { // get the address of the locked nft todo!!!
-    if (self.timeTillLockEnds == null) { return null; }
+    if (self.timeLockEnds == null) { return null; }
     return myAddress();
   }
 
@@ -84,7 +85,7 @@ contract Task4 with Deployable {
 
   inline fun rejectIfAlreadyHolds(msg: OwnershipAssigned) {
     // If the smart contract already holds an nft then return the incoming nft back to the sender
-    if (self.timeTillLockEnds != null) {
+    if (self.prevOwner != null) {
       send(SendParameters{
         to: sender(),
         value: 0,
@@ -115,7 +116,7 @@ contract Task4 with Deployable {
       }.toCell()
     });
     // nullify vars
-    self.timeTillLockEnds = null;
+    self.timeLockEnds = null;
     self.prevOwner = null;
   }
 
