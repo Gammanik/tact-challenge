@@ -36,7 +36,7 @@ import "@stdlib/deploy";
 message(0x7362d09c) TokenNotification {
     queryId: Int as uint64;
     amount: Int as coins;
-    from: Address;
+    from: Address; //
     forwardPayload: Slice as remaining;
 }
 
@@ -72,18 +72,18 @@ contract Task3 with Deployable {
   /* MAIN LOGIC */
   receive(t: TokenNotification) {
       self.validateToken(t.from);
-      if (self.isAdmin()) {
-        self.updateLiquidity(t);
+      if (t.from == self.owner) { // admin can't buy | only deposit
+        self.deposit(t.amount);
       } else { // buy collateral with t.amount
         self.buy(t);
     }
   }
 
-  inline fun updateLiquidity(t: TokenNotification) {
-      if (t.from == self.jettonAddressA) {
-        self.aAmount = self.aAmount + t.amount;
+  inline fun deposit(amount: Int) {
+      if (sender() == self.jettonAddressA) { // sender() == a.addr check means admin is A contract
+        self.aAmount = self.aAmount + amount;
       } else {
-        self.bAmount = self.bAmount + t.amount;
+        self.bAmount = self.bAmount + amount;
       }
   }
 
@@ -172,10 +172,8 @@ contract Task3 with Deployable {
   }
 
   inline fun validateToken(tokenAddress: Address) {
-    require(sender() == tokenAddress, "sender should be token address");
     require(tokenAddress == self.jettonAddressA || tokenAddress == self.jettonAddressB, "Invalid token");
   }
-  inline fun isAdmin(): Bool { return context().sender == self.owner; }
 
 }
 
