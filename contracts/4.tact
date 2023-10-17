@@ -57,7 +57,7 @@ contract Task4 with Deployable {
   }
 
   receive(msg: OwnershipAssigned) {
-    require(sender() == msg.prevOwner, "");
+    require(sender() == msg.prevOwner, "as per TEP-62 sender() == prevOwner");
     self.timeTillLockEnds = msg.forwardPayload.loadUint(64);
     self.prevOwner = sender();
     self.rejectIfAlreadyHolds(msg);
