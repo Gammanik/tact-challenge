@@ -6,7 +6,8 @@ import "@stdlib/deploy";
   The price of jettons depends on the amount of jettons that smart contract has.
   Therefore, the smart contract needs to keep track of how much jettons it has.
   
-  Price for the jetton A in swap B->A should be calculated by formula "amountOfJettonAOnContract * decimal / amountOfJettonBOnContract".
+  Price for the jetton A in swap B->A should be calculated by formula:
+    "amountOfJettonAOnContract * decimal / amountOfJettonBOnContract".
   Token prices must be decimalized for accuracy, so it is the prices that must be adjusted to decimal 1e9.
   Decimals are only needed for price accuracy. It should be set as 1e9.
   So, if smart contract has 10 of jetton A and 2 of jetton B, then after sending 1 jetton B you should receive 5 of jettons A.
@@ -141,14 +142,14 @@ contract Task3 with Deployable {
       });
   }
 
-  // priceB = aAmn / bAmn
+  // priceB = aAmn / bAmn ;; 1btc 10eth pBtc = 10eth / 1btc ;; pa = 1b/10a
   get fun price(jetton: Address): Int {
     if (jetton == self.jettonAddressA) {
-      require(self.aAmount != 0, "div by 0");
-      return self.bAmount * self.decimal / self.aAmount;
-    } else if (jetton == self.jettonAddressB) {
-      require(self.bAmount != 0, "div by 0");
+      require(self.bAmount == 0, "div by 0");
       return self.aAmount * self.decimal / self.bAmount;
+    } else if (jetton == self.jettonAddressB) {
+      require(self.aAmount == 0, "div by 0");
+      return self.bAmount * self.decimal / self.aAmount;
     }
     throw(0); return 0;
   }
@@ -168,3 +169,6 @@ contract Task3 with Deployable {
   inline fun isAdmin(): Bool { return context().sender == self.owner; }
 
 }
+
+// 10b 1a pa = 10b, pb = 0.1a
+// 5a : 10 * 5a = 50b
