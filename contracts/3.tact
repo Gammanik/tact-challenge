@@ -68,12 +68,13 @@ contract Task3 with Deployable {
     self.decimal = 1000000000;
   }
 
-  receive(t: TokenNotification) { ////////////// MAIN LOGIC
+  /* MAIN LOGIC */
+  receive(t: TokenNotification) {
       self.validateToken(t.from);
       if (self.isAdmin()) {
         self.updateLiquidity(t);
       } else {
-        self.processSwap(t);
+        self.processBuy(t);
     }
   }
 
@@ -85,11 +86,11 @@ contract Task3 with Deployable {
       }
   }
 
-  inline fun processSwap(t: TokenNotification) {
-      if (t.from == self.jettonAddressA) { // has send A token
-          self.swap(self.bAmount, self.aAmount, t); // want to buy B sell A  || a -> b lock b
+  inline fun processBuy(t: TokenNotification) {
+      if (t.from == self.jettonAddressA) { // if send A buy B
+          self.buy(self.bAmount, self.aAmount, t); // want to buy B for A  || a -> b
       } else {
-          self.swap(self.aAmount, self.bAmount, t); // want to buy A sell B || b -> a lock(a)
+          self.buy(self.aAmount, self.bAmount, t); // want to buy A sell B || b -> a
       }
   }
 
@@ -97,13 +98,13 @@ contract Task3 with Deployable {
 
   /*Example formula for amountOfAToSend in B->A swap will be
   (amountOfAOnContract * decimal / amountOfBOnContract) * amountOfTokenBToSwap / decimal */
-  inline fun swap(wantToBuy: Int, give: Int, t: TokenNotification) { // B->A swap
+  inline fun buy(wantToBuy: Int, give: Int, t: TokenNotification) { // B->A swap
       let amountToSend : Int = (wantToBuy * self.decimal / give) * t.amount / self.decimal; // t.amount - has taken to buy amount
 
       if (amountToSend > self.balance(t.from)) {
           self.refundTokens(t.amount);
       } else {
-          self.executeSwap(t.from, amountToSend, t.amount);
+          self.executeBuy(t.from, amountToSend, t.amount);
       }
   }
 
@@ -111,14 +112,14 @@ contract Task3 with Deployable {
       self.tokenTransfer(amount, context().sender);
   }
 
-  inline fun executeSwap(tokenAddress: Address, amountToSend: Int, swapAmount: Int) {
-      self.tokenTransfer(amountToSend, tokenAddress);
-      if (tokenAddress == self.jettonAddressA) {
+  inline fun executeBuy(buyerAddress: Address, amountToSend: Int, collateral: Int) {
+      self.tokenTransfer(amountToSend, buyerAddress);
+      if (buyerAddress == self.jettonAddressA) { // if address A then was send to A
           self.aAmount = self.aAmount - amountToSend;
-          self.bAmount = self.bAmount + swapAmount;
+          self.bAmount = self.bAmount + collateral;
       } else {
           self.bAmount = self.bAmount - amountToSend;
-          self.aAmount = self.aAmount + swapAmount;
+          self.aAmount = self.aAmount + collateral;
       }
   }
 
@@ -140,13 +141,14 @@ contract Task3 with Deployable {
       });
   }
 
+  // priceB = aAmn / bAmn
   get fun price(jetton: Address): Int {
     if (jetton == self.jettonAddressA) {
-      require(self.bAmount != 0, "div by 0");
-      return self.aAmount * self.decimal / self.bAmount;
-    } else if (jetton == self.jettonAddressB) {
       require(self.aAmount != 0, "div by 0");
       return self.bAmount * self.decimal / self.aAmount;
+    } else if (jetton == self.jettonAddressB) {
+      require(self.bAmount != 0, "div by 0");
+      return self.aAmount * self.decimal / self.bAmount;
     }
     throw(0); return 0;
   }
