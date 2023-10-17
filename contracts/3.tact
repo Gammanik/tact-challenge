@@ -102,7 +102,7 @@ contract Task3 with Deployable {
       if (amountWantToBuy > self.balance(self.collateralAddress(t.from))) { // todo:
           self.refundTokens(t.amount);
       } else {
-          self.executeBuy(amountToBuy, t.amount, t.from);
+          self.executeBuy(amountWantToBuy, t.amount, t.from);
       }
   }
 
