@@ -66,6 +66,7 @@ contract Task4 with Deployable {
   receive(msg: NftWithdrawal) {
     require(sender() == self.prevOwner,"sender is not the owner"); // if sender is not the owner (that came from OwnershipAssigned as prevOwner address) then throw "Invalid sender"
     if (now() < self.timeTillLockEnds!!) { self.reply("NFT is still locked".asComment()); }
+    self.unlock(msg);
   }
 
   get fun time(): Int { // get how much lock time is left
@@ -73,10 +74,9 @@ contract Task4 with Deployable {
     return self.timeTillLockEnds!! - now();
   }
 
-  get fun nft(): Address? { // get the address of the locked nft todo!!!
-    //if (self.nftAddress == null) { return null; }
-    //return self.nftAddress!!;
-    return null;
+  get fun nfget the address of the locked nftt(): Address? { //  todo!!!
+    if (self.timeTillLockEnds == null) { return null; }
+    return myAddress();
   }
 
   get fun owner(): Address? { // get the owner of the locked nft (that came from OwnershipAssigned as prevOwner)
@@ -103,8 +103,7 @@ contract Task4 with Deployable {
   }
 
   inline fun unlock(msg: NftWithdrawal) {
-    // - Otherwise (all good) send the locked nft back to the owner with all the remaining TON balance
-    send(SendParameters{
+    send(SendParameters{ // send the locked nft back to the owner with all the remaining TON balance
       to: self.prevOwner!!,
       value: 0,
       mode: SendRemainingBalance + SendIgnoreErrors,
@@ -117,5 +116,9 @@ contract Task4 with Deployable {
         forwardPayload: emptyCell().asSlice() // todo: think
       }.toCell()
     });
+    // nullify vars
+    self.timeTillLockEnds = null;
+    self.prevOwner = null;
   }
+
 }
