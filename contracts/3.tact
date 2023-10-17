@@ -94,11 +94,12 @@ contract Task3 with Deployable {
     Example formula for amountOfAToSend in B->A swap will be
     amountOfAToSend = (amountA * decimal / amountB) * amountOfTokenBToSwap / decimal
   */
-  inline fun buy(t: TokenNotification) { // B->A swap
-      let collateralPrice: Int = self.price(self.collateralAddress(t.from));
-      let amountToBuy: Int = collateralPrice * t.amount / self.decimal;
+  inline fun buy(t: TokenNotification) { // A->B swap ; swapAm: f.from == a.addr ? b.price * t.am : a.price * t.am
+      let clAddress: Address = self.collateralAddress(t.from); // collateralAddress
+      let clPrice: Int = self.price(clAddress); // collateralPrice
+      let amountWantToBuy: Int = clPrice * t.amount / self.decimal;
 
-      if (amountToBuy > self.balance(t.from)) {
+      if (amountWantToBuy > self.balance(self.collateralAddress(t.from))) { // todo:
           self.refundTokens(t.amount);
       } else {
           self.executeBuy(amountToBuy, t.amount, t.from);
@@ -111,14 +112,14 @@ contract Task3 with Deployable {
     return self.jettonAddressA;
   }
 
-  inline fun executeBuy(amountBought: Int, collateral: Int, buyerAddress: Address) {
+  inline fun executeBuy(amountBought: Int, staked: Int, buyerAddress: Address) {
       self.tokenTransfer(amountBought, buyerAddress);
-      if (buyerAddress == self.jettonAddressA) { // if message came from A could only buy b tokens
-          self.bAmount = self.bAmount - amountBought; // bought b with his msg.a.amount
-          self.bAmount = self.bAmount + collateral;
-      } else { // bought a with b
+      if (buyerAddress == self.jettonAddressA) { // if message came from A
+          self.aAmount = self.aAmount + staked; // a->b: staked A withdraw B
+          self.bAmount = self.bAmount - amountBought;
+      } else {
+          self.bAmount = self.bAmount + staked; // b->a: staked B withdraw A
           self.aAmount = self.aAmount - amountBought;
-          self.bAmount = self.bAmount + collateral;
       }
   }
 
