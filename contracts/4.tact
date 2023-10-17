@@ -74,7 +74,7 @@ contract Task4 with Deployable {
     return self.timeTillLockEnds!! - now();
   }
 
-  get fun nfget the address of the locked nftt(): Address? { //  todo!!!
+  get fun nft(): Address? { // get the address of the locked nft todo!!!
     if (self.timeTillLockEnds == null) { return null; }
     return myAddress();
   }
