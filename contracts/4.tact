@@ -57,10 +57,13 @@ contract Task4 with Deployable {
   }
 
   receive(msg: OwnershipAssigned) {
-      // require(sender() == msg.prevOwner, "as per TEP-62 sender() == prevOwner");
-      if self.hasLocked() && self.timeLockEnds!! > now() { self.transferBack(); } // return back if contract has locked nft
-      self.timeLockEnds = now() + msg.forwardPayload.loadUint(64); // tEnd = now() + timeForWhichToLock
-      self.prevOwner = msg.prevOwner;
+      // require(sender() == msg.prevOwner, "as per TEP-62 sender() == prevOwner on OwnershipAssigned  ???");
+      if self.hasLocked() && self.timeLockEnds!! > now() { // return back if contract has locked nft
+          self.transferBack();
+      } else { // success lock
+          self.timeLockEnds = now() + msg.forwardPayload.loadUint(64); // tEnd = now() + timeForWhichToLock
+          self.prevOwner = msg.prevOwner;
+      }
   }
 
   receive(msg: NftWithdrawal) {
