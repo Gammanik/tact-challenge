@@ -38,7 +38,7 @@ message(0x5fcc3d14) Transfer {
     responseDestination: Address; 
     customPayload: Cell?; 
     forwardAmount: Int as coins; 
-    forwardPayload: Slice as remaining; 
+    forwardPayload: Slice as remaining; // the same defaults as for task 3
 }
 
 message NftWithdrawal {
@@ -53,51 +53,49 @@ contract Task4 with Deployable {
 
 
   init(seed: Int) {
-    self.seed = seed; // needed to deploy multiple smart contracts copies from one admin address
+      self.seed = seed; // needed to deploy multiple smart contracts copies from one admin address
   }
 
   receive(msg: OwnershipAssigned) {
-    require(sender() == msg.prevOwner, "as per TEP-62 sender() == prevOwner");
-    self.timeLockEnds = now() + msg.forwardPayload.loadUint(64); // tEnd = now() + timeForWhichToLock
-    self.prevOwner = msg.prevOwner;
-    self.returnBackIfHolds(msg);
+      require(sender() == msg.prevOwner, "as per TEP-62 sender() == prevOwner");
+      self.timeLockEnds = now() + msg.forwardPayload.loadUint(64); // tEnd = now() + timeForWhichToLock
+      self.prevOwner = sender();
+      if (self.prevOwner != null) { self.transferBack(); } // return back if contract has locked nft
   }
 
   receive(msg: NftWithdrawal) {
-    require(sender() == self.prevOwner, "Invalid sender"); // if sender is not the owner (that came from OwnershipAssigned as prevOwner address) then throw "Invalid sender"
-    if (now() < self.timeLockEnds!!) { self.reply("NFT is still locked".asComment()); }
-    self.unlock(msg);
+      require(sender() == self.prevOwner, "Invalid sender"); // if sender is not the owner (that came from OwnershipAssigned as prevOwner address) then throw "Invalid sender"
+      if (now() < self.timeLockEnds!!) { self.reply("NFT is still locked".asComment()); }
+      self.unlock(msg);
   }
 
   get fun time(): Int { // get how much lock time is left
-    if (self.timeLockEnds == null) { return 0; }
-    return self.timeLockEnds!! - now();
+      if (self.timeLockEnds == null) { return 0; }
+      return self.timeLockEnds!! - now();
   }
 
   get fun nft(): Address? { // get the address of the locked nft todo!!!
-    if (self.timeLockEnds == null) { return null; }
-    return myAddress();
+      if (self.timeLockEnds == null) { return null; }
+      return myAddress();
   }
 
   // get the owner of the locked nft (that came from OwnershipAssigned as prevOwner)
   get fun owner(): Address? { return self.prevOwner; }
 
-  inline fun returnBackIfHolds(msg: OwnershipAssigned) {
+  inline fun transferBack() {
     // If the smart contract already holds an nft then return the incoming nft back to the sender
-    if (self.prevOwner != null) {
-      send(SendParameters{
-        to: sender(),
-        value: 0,
-        body: Transfer{
-          queryId: 0,
-          newOwner: msg.prevOwner,
-          responseDestination: myAddress(),
-          customPayload: null,
-          forwardAmount: ton("0.01"),
-          forwardPayload: msg.forwardPayload
-        }.toCell()
-      });
-    }
+    send(SendParameters{
+      to: sender(),
+      value: 0,
+      body: Transfer{
+        queryId: 0,
+        newOwner: sender(),
+        responseDestination: myAddress(),
+        customPayload: null,
+        forwardAmount: ton("0.01"),
+        forwardPayload: emptySlice()
+      }.toCell()
+    });
   }
 
   inline fun unlock(msg: NftWithdrawal) {
@@ -108,10 +106,10 @@ contract Task4 with Deployable {
       body: Transfer{
         queryId: msg.queryId,
         newOwner: self.prevOwner!!,
-        responseDestination: self.prevOwner!!,
+        responseDestination: myAddress(),
         customPayload: null,
         forwardAmount: 0,
-        forwardPayload: emptyCell().asSlice() // todo: think
+        forwardPayload: emptySlice()
       }.toCell()
     });
     // nullify vars
