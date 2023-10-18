@@ -6,11 +6,12 @@ import "@stdlib/deploy";
   The price of jettons depends on the amount of jettons that smart contract has.
   Therefore, the smart contract needs to keep track of how much jettons it has.
   
-  Price for the jetton A in swap B->A should be calculated by formula:
+  Price for 1 jetton A in swap B->A should be calculated by formula:
     "amountOfJettonAOnContract * decimal / amountOfJettonBOnContract".
   Token prices must be decimalized for accuracy, so it is the prices that must be adjusted to decimal 1e9.
   Decimals are only needed for price accuracy. It should be set as 1e9.
   So, if smart contract has 10 of jetton A and 2 of jetton B, then after sending 1 jetton B you should receive 5 of jettons A.
+  ==> 10a 2b: price_for_a(1 (if you wanna buy 1b)) = a/b = 10/2 = 5 -> in order to buy 1b you should send 5a
 
   Example formula for amountOfAJettonToSend in B->A swap will be
   (amountOfJettonAOnContract * decimal / amountOfJettonBOnContract) * amountOfTokenBToSwap / decimal
@@ -21,7 +22,7 @@ import "@stdlib/deploy";
   If user will send 3 jettons B, smart contract should reject the message (because contract does not have 3 * 5 = 15 jettons A)
   and send 3 jettons B back to the user.
 
-  If smart contract receives a different jetton (neither A nor B) then throw an error.
+  If smart contract receives a different jetton (neither A nor B) then throw an error. // SENDER is not A || B
 
   Implement a getter that returns the number of jettons in the pool and
   one more to get the price of jetton A or jetton B.
@@ -81,30 +82,29 @@ contract Task3 with Deployable {
 
   /* Example formula for amountOfAToSend in B->A swap will be
      amountOfAToSend = (amountA * decimal / amountB) * amountOfTokenBToSwap / decimal */
-  inline fun buy(t: TokenNotification) {
-      let clAddress: Address = self.collateralAddress(sender()); // collateralAddress
-      let clPrice: Int = self.price(clAddress); // collateralPrice
-      let amountToBuy: Int = clPrice * t.amount / self.decimal;
+  inline fun buy(t: TokenNotification) { // 10a==2b -> I give 1b I get get 5a; got 1a->0.02b : 11a==1.8b, pa=11/1.8=6.1, pb=1/110.09
+      let aPricePerOneB: Int = self.price(self.toggle()); // get b coins only from b?
+      let amountOfAToSend: Int = aPricePerOneB * t.amount / self.decimal;
 
-      if amountToBuy > self.balance(clAddress) { // todo:
+      if amountOfAToSend <= self.balance(self.toggle()) { // > a on balance for b->a swap
+          self.change(amountOfAToSend, t);
+      } else {
           self.send(t.amount, t.from); // refund
-      } else {
-          self.executeBuy(amountToBuy, t.amount);
       }
   }
 
-  inline fun executeBuy(amountBought: Int, staked: Int) {
-      self.send(amountBought, sender());
-      if (sender() == self.jettonAddressA) {
-          self.aAmount = self.aAmount + staked; // a->b: staked A withdraw B
-          self.bAmount = self.bAmount - amountBought;
+  inline fun change(amountBuy: Int, t: TokenNotification) { // change b->a b for a; give b.amount take a as ret
+      self.send(amountBuy, t.from);
+      if (sender() == self.jettonAddressA) { // from jettonAddressA I can get only A tokens no?
+          self.aAmount = self.aAmount + t.amount; // a->b: give A take B
+          self.bAmount = self.bAmount - amountBuy;
       } else {
-          self.bAmount = self.bAmount + staked; // b->a: staked B withdraw A
-          self.aAmount = self.aAmount - amountBought;
+          self.bAmount = self.bAmount + t.amount; // b->a: staked B withdraw A
+          self.aAmount = self.aAmount - amountBuy;
       }
   }
 
-  inline fun send(amountToSend: Int, destination: Address) {
+  inline fun send(amountToSend: Int, newOwner: Address) {
       send(SendParameters{
           to: sender(),
           value: 0,
@@ -113,8 +113,8 @@ contract Task3 with Deployable {
           body: TokenTransfer{
               queryId: 0,
               amount: amountToSend,
-              destination: destination,
-              responseDestination: destination, // todo: destination?
+              destination: newOwner,
+              responseDestination: newOwner,
               customPayload: null,
               forwardTonAmount: ton("0.01"),
               forwardPayload: emptySlice()
@@ -141,9 +141,8 @@ contract Task3 with Deployable {
     } throw(0); return 0;
   }
 
-  // collateral token address: collateralAddress(a) -> b
-  inline fun collateralAddress(adr: Address): Address { // to get the price I need collaterall address ; the fun would not be needed if there was ternary operator
-    if adr == self.jettonAddressA { return self.jettonAddressB; }
+  inline fun toggle(): Address { // to get the price I need collaterall address ; the fun would not be needed if there was ternary operator
+    if sender() == self.jettonAddressA { return self.jettonAddressB; }
     return self.jettonAddressA;
   }
 
