@@ -75,7 +75,7 @@ contract Task3 with Deployable {
       require(sender() == self.jettonAddressA || sender() == self.jettonAddressB, "Invalid token");
       if (t.from == self.owner) { // admin can't buy, only deposit
         self.deposit(t.amount);
-      } else { // buy collateral with t.amount
+      } else { // buy collateral with t.amount (b)
         self.buy(t);
     }
   }
@@ -124,9 +124,8 @@ contract Task3 with Deployable {
 
   // 1a 10b => price_of_b = 0.1a = 1b / 10a = b / a -- NO price_of1_b = 10a
   get fun price(jetton: Address): Int { // price for jetton
-    require(self.aAmount != 0 && self.bAmount != 0, "a b != 0");
-
-    if (jetton == self.jettonAddressA) { // then return how much b could get for 1a
+    // require(self.aAmount != 0 && self.bAmount != 0, "a b != 0");
+    if (jetton == self.jettonAddressA) {
       return self.bAmount * self.decimal / self.aAmount;
     } else if (jetton == self.jettonAddressB) { // price for b
       return self.aAmount * self.decimal / self.bAmount;
