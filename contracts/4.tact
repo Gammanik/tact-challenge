@@ -125,6 +125,7 @@ contract Task4 with Deployable {
     // nullify vars
     self.timeLockEnds = null;
     self.prevOwner = null;
+    self.nftAddress = null;
   }
 
 }
