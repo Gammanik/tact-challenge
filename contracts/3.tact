@@ -93,18 +93,12 @@ contract Task3 with Deployable {
       }
   }
 
-  inline fun change(amountBuy: Int, t: TokenNotification) { // change b->a b for a; give b.amount take a as ret
-      self.send(amountBuy, t.from);
-      if (sender() == self.jettonAddressA) { // from jettonAddressA I can get only A tokens no?
-          self.aAmount = self.aAmount + t.amount; // a->b: give A take B
-          self.bAmount = self.bAmount - amountBuy;
-      } else {
-          self.bAmount = self.bAmount + t.amount; // b->a: staked B withdraw A
-          self.aAmount = self.aAmount - amountBuy;
-      }
+  inline fun change(wantToBuy: Int, t: TokenNotification) { // change b->a b for a; give b.amount take a as ret
+      self.send(wantToBuy, t.from);
+      self.updateBalance(wantToBuy, t.amount);
   }
 
-  inline fun send(amountToSend: Int, newOwner: Address) {
+  inline fun send(buyAmount: Int, newOwner: Address) {
       send(SendParameters{
           to: sender(),
           value: 0,
@@ -112,9 +106,9 @@ contract Task3 with Deployable {
           bounce: true,
           body: TokenTransfer{
               queryId: 0,
-              amount: amountToSend,
+              amount: buyAmount,
               destination: newOwner,
-              responseDestination: newOwner,
+              responseDestination: myAddress(),
               customPayload: null,
               forwardTonAmount: ton("0.01"),
               forwardPayload: emptySlice()
@@ -148,6 +142,16 @@ contract Task3 with Deployable {
   inline fun deposit(amount: Int) {
       if (sender() == self.jettonAddressA) { self.aAmount = self.aAmount + amount; }
       else { self.bAmount = self.bAmount + amount; }
+  }
+
+  inline fun updateBalance(amountBuy: Int, cashIHave: Int) {
+    if (sender() == self.jettonAddressA) { // from jettonAddressA I can get only A tokens no?
+        self.aAmount = self.aAmount + cashIHave; // a->b: give A take B
+        self.bAmount = self.bAmount - amountBuy;
+    } else {
+        self.bAmount = self.bAmount + cashIHave; // b->a: staked B withdraw A
+        self.aAmount = self.aAmount - amountBuy;
+    }
   }
 
 }
