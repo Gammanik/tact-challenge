@@ -48,9 +48,8 @@ message NftWithdrawal {
 
 contract Task4 with Deployable {
   seed: Int as uint128;
-  timeLockEnds: Int?; // todo: could make just one nullable struct instead
-  prevOwner: Address?; // also used to check if anything is locked at all (if not null)
-
+  timeLockEnds: Int?; // todo: could make just one nullable struct instead t{timeLockEnds, prevOwner}
+  prevOwner: Address?;
 
   init(seed: Int) {
       self.seed = seed; // needed to deploy multiple smart contracts copies from one admin address
@@ -58,7 +57,7 @@ contract Task4 with Deployable {
 
   receive(msg: OwnershipAssigned) {
       // require(sender() == msg.prevOwner, "as per TEP-62 sender() == prevOwner on OwnershipAssigned  ???");
-      if self.hasLocked() && self.timeLockEnds!! > now() { // return back if contract has locked nft
+      if self.hasLocked() {
           self.transferBack();
       } else { // success lock
           self.timeLockEnds = now() + msg.forwardPayload.loadUint(64); // tEnd = now() + timeForWhichToLock
@@ -68,7 +67,8 @@ contract Task4 with Deployable {
 
   receive(msg: NftWithdrawal) {
       require(sender() == self.prevOwner, "Invalid sender"); // if sender is not the owner (that came from OwnershipAssigned as prevOwner address) then throw "Invalid sender"
-      if self.hasLocked() && self.timeLockEnds!! > now() {
+
+      if self.hasLocked() {
           self.reply("NFT is still locked".asComment());
       } else {
           self.unlock(msg);
@@ -88,7 +88,7 @@ contract Task4 with Deployable {
   // get the owner of the locked nft (that came from OwnershipAssigned as prevOwner)
   get fun owner(): Address? { return self.prevOwner; }
 
-  inline fun hasLocked(): Bool { return self.nft() == null; }
+  inline fun hasLocked(): Bool { return self.timeLockEnds != null && self.timeLockEnds!! > now(); }
 
   inline fun transferBack() {
     // If the smart contract already holds an nft then return the incoming nft back to the sender
@@ -110,9 +110,9 @@ contract Task4 with Deployable {
     send(SendParameters{ // send the locked nft back to the owner with all the remaining TON balance
       to: self.prevOwner!!,
       value: 0,
-      mode: SendRemainingBalance + SendIgnoreErrors,
+      mode: SendRemainingValue + SendIgnoreErrors,
       body: Transfer{
-        queryId: msg.queryId,
+        queryId: 0,
         newOwner: self.prevOwner!!,
         responseDestination: myAddress(),
         customPayload: null,
