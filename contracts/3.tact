@@ -118,12 +118,12 @@ contract Task3 with Deployable {
 
   // 1a 10b => price_of_b = 0.1a = 1b / 10a = b / a -- NO price_of1_b = 10a
   get fun price(jetton: Address): Int { // price for jetton
-    // require(self.aAmount != 0 && self.bAmount != 0, "a b != 0");
+    require(self.aAmount != 0 && self.bAmount != 0, "a b != 0");
     if (jetton == self.jettonAddressA) {
       return self.bAmount * self.decimal / self.aAmount;
     } else if (jetton == self.jettonAddressB) { // price for b
       return self.aAmount * self.decimal / self.bAmount;
-    } throw(0); return 0;
+    } throw(100); return 0;
   }
 
   get fun balance(jetton: Address): Int {
@@ -131,7 +131,7 @@ contract Task3 with Deployable {
       return self.aAmount;
     } else if (jetton == self.jettonAddressB) {
       return self.bAmount;
-    } throw(0); return 0;
+    } throw(100); return 0;
   }
 
   inline fun toggle(): Address { // to get the price I need collaterall address ; the fun would not be needed if there was ternary operator
