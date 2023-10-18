@@ -58,18 +58,18 @@ contract Task4 with Deployable {
 
   receive(msg: OwnershipAssigned) {
       // require(sender() == msg.prevOwner, "as per TEP-62 sender() == prevOwner");
-      if self.hasLocked() && (self.timeLockEnds!! > now()) { self.transferBack(); } // return back if contract has locked nft
+      if self.hasLocked() && self.timeLockEnds!! > now() { self.transferBack(); } // return back if contract has locked nft
       self.timeLockEnds = now() + msg.forwardPayload.loadUint(64); // tEnd = now() + timeForWhichToLock
       self.prevOwner = msg.prevOwner;
   }
 
   receive(msg: NftWithdrawal) {
       require(sender() == self.prevOwner, "Invalid sender"); // if sender is not the owner (that came from OwnershipAssigned as prevOwner address) then throw "Invalid sender"
-      if self.timeLockEnds!! > now() {
+      if self.hasLocked() && self.timeLockEnds!! > now() {
           self.reply("NFT is still locked".asComment());
-          return;
+      } else {
+          self.unlock(msg);
       }
-      self.unlock(msg);
   }
 
   get fun time(): Int { // get how much lock time is left
