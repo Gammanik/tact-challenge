@@ -33,10 +33,10 @@ import "@stdlib/deploy";
   To be exact: any jettons (A or B) received from the admin are "added". Admin can't swap.
 */
 
-message(0x7362d09c) TokenNotification { // the sender() is always A or B but .from is prevOwner
+message(0x7362d09c) TokenNotification {
     queryId: Int as uint64;
     amount: Int as coins;
-    from: Address; // or from is A || B?
+    from: Address;
     forwardPayload: Slice as remaining;
 }
 
@@ -72,30 +72,19 @@ contract Task3 with Deployable {
   /* MAIN LOGIC */
   receive(t: TokenNotification) {
       require(sender() == self.jettonAddressA || sender() == self.jettonAddressB, "Invalid token");
-      if (t.from == self.owner) { // admin can't buy | only deposit
+      if (t.from == self.owner) { // admin can't buy, only deposit
         self.deposit(t.amount);
       } else { // buy collateral with t.amount
         self.buy(t);
     }
   }
 
-  inline fun deposit(amount: Int) {
-      if (sender() == self.jettonAddressA) { // sender() == a.addr check means admin is A contract
-        self.aAmount = self.aAmount + amount;
-      } else {
-        self.bAmount = self.bAmount + amount;
-      }
-  }
-
   /*
-    amounts: 10b 2a || aToSend = price_a * amount_b_deposited
-      -got 2a for change:
-        b_to_return = 10 = (10/2) * 2 = price_(b) * deposited
     Example formula for amountOfAToSend in B->A swap will be
     amountOfAToSend = (amountA * decimal / amountB) * amountOfTokenBToSwap / decimal
   */
   inline fun buy(t: TokenNotification) { // A->B swap ; swapAm: f.from == a.addr ? b.price * t.am : a.price * t.am
-      // let clAddress: Address = self.collateralAddress(sender()); // collateralAddress
+      let clAddress: Address = self.collateralAddress(sender()); // collateralAddress
       let clPrice: Int = self.price(sender()); // collateralPrice
       let amountWantToBuy: Int = clPrice * t.amount / self.decimal;
 
@@ -139,20 +128,15 @@ contract Task3 with Deployable {
       });
   }
 
-  /*
-      b.price_to_a = a.amount / b.amount ;;
-  */
-  // 1a 10b => price_of_b_to_a = 0.1a = 1b / 10a =
-  // priceOf(jetton: Address)
-  get fun price(jetton: Address): Int { // is it the price for address? like if I'm sending from `a` I should get `a` price in `b`?
-    if (jetton == self.jettonAddressA) {
-      require(self.aAmount == 0, "div by 0");
+  // 1a 10b => price_of_b = 0.1a = 1b / 10a = b / a -- NO price_of1_b = 10a
+  get fun price(jetton: Address): Int { // price for jetton
+    require(self.aAmount != 0 && self.bAmount != 0, "a b != 0");
+
+    if (jetton == self.jettonAddressA) { // then return how much b could get for 1a
       return self.bAmount * self.decimal / self.aAmount;
-    } else if (jetton == self.jettonAddressB) {
-      require(self.bAmount == 0, "div by 0");
+    } else if (jetton == self.jettonAddressB) { // price for b
       return self.aAmount * self.decimal / self.bAmount;
-    }
-    throw(0); return 0;
+    } throw(0); return 0;
   }
 
   get fun balance(jetton: Address): Int {
@@ -160,8 +144,7 @@ contract Task3 with Deployable {
       return self.aAmount;
     } else if (jetton == self.jettonAddressB) {
       return self.bAmount;
-    }
-    throw(0); return 0;
+    } throw(0); return 0;
   }
 
   // collateral token address: collateralAddress(a) -> b
@@ -170,7 +153,9 @@ contract Task3 with Deployable {
     return self.jettonAddressA;
   }
 
-}
+  inline fun deposit(amount: Int) {
+      if (sender() == self.jettonAddressA) { self.aAmount = self.aAmount + amount; }
+      else { self.bAmount = self.bAmount + amount; }
+  }
 
-// 10b 1a pa = 10b, pb = 0.1a
-// 5a : 10 * 5a = 50b
+}
