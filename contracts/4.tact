@@ -50,18 +50,19 @@ contract Task4 with Deployable {
   seed: Int as uint128;
   timeLockEnds: Int?; // todo: could make just one nullable struct instead t{timeLockEnds, prevOwner}
   prevOwner: Address?;
+  nftAddress: Address?;
 
   init(seed: Int) {
       self.seed = seed; // needed to deploy multiple smart contracts copies from one admin address
   }
 
   receive(msg: OwnershipAssigned) {
-      // require(sender() == msg.prevOwner, "as per TEP-62 sender() == prevOwner on OwnershipAssigned  ???");
       if self.hasLocked() {
-          self.transferBack();
+          self.transferBack(msg.prevOwner);
       } else { // success lock
-          self.timeLockEnds = now() + msg.forwardPayload.loadUint(64); // tEnd = now() + timeForWhichToLock
+          self.nftAddress = sender(); // messages are send from nft contract
           self.prevOwner = msg.prevOwner;
+          self.timeLockEnds = now() + msg.forwardPayload.loadUint(32); // tEnd = now() + timeForWhichToLock
       }
   }
 
@@ -77,12 +78,13 @@ contract Task4 with Deployable {
 
   get fun time(): Int { // get how much lock time is left
       if self.timeLockEnds == null { return 0; }
-      return self.timeLockEnds!! - now();
+      let timeTillLockEnd: Int = self.timeLockEnds!! - now();
+
+      if timeTillLockEnd > 0 { return timeTillLockEnd; } else { return 0; }
   }
 
   get fun nft(): Address? { // get the address of the locked nft
-      if self.timeLockEnds == null { return null; }
-      return myAddress();
+      return self.nftAddress;
   }
 
   // get the owner of the locked nft (that came from OwnershipAssigned as prevOwner)
@@ -90,14 +92,14 @@ contract Task4 with Deployable {
 
   inline fun hasLocked(): Bool { return self.timeLockEnds != null && self.timeLockEnds!! > now(); }
 
-  inline fun transferBack() {
+  inline fun transferBack(prevOwner: Address) {
     // If the smart contract already holds an nft then return the incoming nft back to the sender
     send(SendParameters{
-      to: sender(),
+      to: sender(), // self.nftAddress!!
       value: 0,
       body: Transfer{
         queryId: 0,
-        newOwner: sender(),
+        newOwner: prevOwner,
         responseDestination: myAddress(),
         customPayload: null,
         forwardAmount: ton("0.01"),
@@ -108,7 +110,7 @@ contract Task4 with Deployable {
 
   inline fun unlock(msg: NftWithdrawal) {
     send(SendParameters{ // send the locked nft back to the owner with all the remaining TON balance
-      to: self.prevOwner!!,
+      to: msg.nftAddress,
       value: 0,
       mode: SendRemainingValue + SendIgnoreErrors,
       body: Transfer{
