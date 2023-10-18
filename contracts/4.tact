@@ -58,7 +58,7 @@ contract Task4 with Deployable {
 
   receive(msg: OwnershipAssigned) {
       if self.isLocked() {
-          self.send(sender(), msg.prevOwner, emptySlice()); // todo: msg.forwardPayload?
+          self.send(sender(), msg.prevOwner, msg.forwardPayload);
       } else { // LOCK
           self.nftAddress = sender(); // messages are send from nft contract
           self.prevOwner = msg.prevOwner;
@@ -67,13 +67,12 @@ contract Task4 with Deployable {
   }
 
   receive(msg: NftWithdrawal) {
-      require(self.prevOwner != null, "Invalid sender");
-      require(sender() == self.prevOwner!!, "Invalid sender"); // if sender is not the owner (that came from OwnershipAssigned as prevOwner address) then throw "Invalid sender"
+      require(self.prevOwner != null && sender() == self.prevOwner!!, "Invalid sender"); // if sender is not the owner (that came from OwnershipAssigned as prevOwner address) then throw "Invalid sender"
 
       if self.isLocked() {
           self.reply("NFT is still locked".asComment());
       } else { // UNLOCK
-          self.send(msg.nftAddress, self.prevOwner!!, emptySlice());
+          self.send(self.nftAddress!!, self.prevOwner!!, emptySlice());
           // nullify vars
           self.timeLockEnds = null;
           self.prevOwner = null;
@@ -87,15 +86,15 @@ contract Task4 with Deployable {
 
   get fun time(): Int { // get how much lock time is left
       if self.timeLockEnds == null { return 0; }
-      let timeTillLockEnd: Int = self.timeLockEnds!! - now();
 
-      if timeTillLockEnd > 0 { return timeTillLockEnd; } else { return 0; }
+      let left: Int = self.timeLockEnds!! - now();
+      if left > 0 { return self.timeLockEnds!! - now(); } else { return 0; }
   }
   get fun nft(): Address? { return self.nftAddress; }
   get fun owner(): Address? { return self.prevOwner; }
 
   inline fun send(to: Address, newOwner: Address, fwPayload: Slice) {
-     send(SendParameters{ // send the locked nft back to the owner with all the remaining TON balance
+     send(SendParameters{
         to: to,
         value: 0,
         mode: SendRemainingValue + SendIgnoreErrors,
