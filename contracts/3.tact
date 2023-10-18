@@ -79,25 +79,23 @@ contract Task3 with Deployable {
     }
   }
 
-  /*
-    Example formula for amountOfAToSend in B->A swap will be
-    amountOfAToSend = (amountA * decimal / amountB) * amountOfTokenBToSwap / decimal
-  */
-  inline fun buy(t: TokenNotification) { // A->B swap ; swapAm: f.from == a.addr ? b.price * t.am : a.price * t.am
+  /* Example formula for amountOfAToSend in B->A swap will be
+     amountOfAToSend = (amountA * decimal / amountB) * amountOfTokenBToSwap / decimal */
+  inline fun buy(t: TokenNotification) {
       let clAddress: Address = self.collateralAddress(sender()); // collateralAddress
-      let clPrice: Int = self.price(sender()); // collateralPrice
-      let amountWantToBuy: Int = clPrice * t.amount / self.decimal;
+      let clPrice: Int = self.price(clAddress); // collateralPrice
+      let amountToBuy: Int = clPrice * t.amount / self.decimal;
 
-      if (amountWantToBuy > self.balance(self.collateralAddress(sender()))) { // todo:
-          self.refundTokens(t.amount);
+      if amountToBuy > self.balance(clAddress) { // todo:
+          self.send(t.amount, t.from); // refund
       } else {
-          self.executeBuy(amountWantToBuy, t.amount);
+          self.executeBuy(amountToBuy, t.amount);
       }
   }
 
   inline fun executeBuy(amountBought: Int, staked: Int) {
-      self.tokenTransfer(amountBought, sender());
-      if (sender() == self.jettonAddressA) { // if message came from A
+      self.send(amountBought, sender());
+      if (sender() == self.jettonAddressA) {
           self.aAmount = self.aAmount + staked; // a->b: staked A withdraw B
           self.bAmount = self.bAmount - amountBought;
       } else {
@@ -106,21 +104,17 @@ contract Task3 with Deployable {
       }
   }
 
-  inline fun refundTokens(amount: Int) {
-      self.tokenTransfer(amount, context().sender);
-  }
-
-  inline fun tokenTransfer(amountToSend: Int, destination: Address) {
+  inline fun send(amountToSend: Int, destination: Address) {
       send(SendParameters{
-          to: destination,
+          to: sender(),
           value: 0,
-          mode: SendRemainingValue,
+          mode: SendRemainingValue + SendIgnoreErrors,
           bounce: true,
           body: TokenTransfer{
               queryId: 0,
               amount: amountToSend,
               destination: destination,
-              responseDestination: myAddress(),
+              responseDestination: myAddress(), // todo: destination?
               customPayload: null,
               forwardTonAmount: ton("0.01"),
               forwardPayload: emptySlice()
