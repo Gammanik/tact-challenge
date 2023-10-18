@@ -57,8 +57,8 @@ contract Task4 with Deployable {
   }
 
   receive(msg: OwnershipAssigned) {
-      require(sender() == msg.prevOwner, "as per TEP-62 sender() == prevOwner");
-      if (self.prevOwner != null) { self.transferBack(); } // return back if contract has locked nft
+      // require(sender() == msg.prevOwner, "as per TEP-62 sender() == prevOwner");
+      if (self.hasLocked()) { self.transferBack(); } // return back if contract has locked nft
       // else lock(..)
       self.timeLockEnds = now() + msg.forwardPayload.loadUint(64); // tEnd = now() + timeForWhichToLock
       self.prevOwner = msg.prevOwner;
@@ -75,13 +75,15 @@ contract Task4 with Deployable {
       return self.timeLockEnds!! - now();
   }
 
-  get fun nft(): Address? { // get the address of the locked nft todo!!!
+  get fun nft(): Address? { // get the address of the locked nft
       if (self.timeLockEnds == null) { return null; }
       return myAddress();
   }
 
   // get the owner of the locked nft (that came from OwnershipAssigned as prevOwner)
   get fun owner(): Address? { return self.prevOwner; }
+
+  inline fun hasLocked(): Bool { return self.nft() == null; }
 
   inline fun transferBack() {
     // If the smart contract already holds an nft then return the incoming nft back to the sender
