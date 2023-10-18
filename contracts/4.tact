@@ -67,12 +67,12 @@ contract Task4 with Deployable {
   }
 
   receive(msg: NftWithdrawal) {
-      require(self.prevOwner != null && sender() == self.prevOwner!!, "Invalid sender"); // if sender is not the owner (that came from OwnershipAssigned as prevOwner address) then throw "Invalid sender"
+      require(sender() == self.prevOwner!!, "Invalid sender"); // if sender is not the owner (that came from OwnershipAssigned as prevOwner address) then throw "Invalid sender"
 
       if self.isLocked() {
           self.reply("NFT is still locked".asComment());
       } else { // UNLOCK
-          self.send(msg.nftAddress, self.prevOwner!!, emptySlice());
+          self.send(sender(), msg.nftAddress, emptySlice());
           // nullify vars
           self.timeLockEnds = null;
           self.prevOwner = null;
