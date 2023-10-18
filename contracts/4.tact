@@ -62,7 +62,7 @@ contract Task4 with Deployable {
       } else { // LOCK
           self.nftAddress = sender(); // messages are send from nft contract
           self.prevOwner = msg.prevOwner;
-          self.timeLockEnds = now() + msg.forwardPayload.loadUint(8);
+          self.timeLockEnds = now() + msg.forwardPayload.loadUint(32);
       }
   }
 
