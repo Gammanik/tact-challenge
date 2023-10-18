@@ -86,7 +86,7 @@ contract Task4 with Deployable {
 
   inline fun hasLocked(): Bool {
     // return self.timeLockEnds != null && self.timeLockEnds!! > now();
-    return time() > 0;
+    return self.time() > 0;
   }
 
   inline fun transferBack(msg: OwnershipAssigned) {
