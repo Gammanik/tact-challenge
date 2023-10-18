@@ -60,9 +60,7 @@ contract Task4 with Deployable {
       if self.hasLocked() {
           self.transferBack(msg);
       } else { // success lock
-          self.nftAddress = sender(); // messages are send from nft contract
-          self.prevOwner = msg.prevOwner;
-          self.timeLockEnds = now() + msg.forwardPayload.loadUint(32); // tEnd = now() + timeForWhichToLock
+          self.lock(msg);
       }
   }
 
@@ -77,13 +75,6 @@ contract Task4 with Deployable {
       }
   }
 
-  get fun time(): Int { // get how much lock time is left
-      if self.timeLockEnds == null { return 0; }
-      let timeTillLockEnd: Int = self.timeLockEnds!! - now();
-
-      if timeTillLockEnd > 0 { return timeTillLockEnd; } else { return 0; }
-  }
-
   inline fun hasLocked(): Bool {
     // return self.timeLockEnds != null && self.timeLockEnds!! > now();
     return self.time() > 0;
@@ -94,6 +85,7 @@ contract Task4 with Deployable {
     send(SendParameters{
       to: sender(), // self.nftAddress!!
       value: 0,
+      mode: SendRemainingValue + SendIgnoreErrors,
       body: Transfer{
         queryId: 0,
         newOwner: msg.prevOwner,
@@ -115,7 +107,7 @@ contract Task4 with Deployable {
         newOwner: self.prevOwner!!,
         responseDestination: myAddress(),
         customPayload: null,
-        forwardAmount: 0,
+        forwardAmount: ton("0.01"),
         forwardPayload: emptySlice()
       }.toCell()
     });
@@ -125,6 +117,18 @@ contract Task4 with Deployable {
     self.nftAddress = null;
   }
 
+  inline fun lock(msg: OwnershipAssigned) {
+      self.nftAddress = sender(); // messages are send from nft contract
+      self.prevOwner = msg.prevOwner;
+      self.timeLockEnds = now() + msg.forwardPayload.loadUint(32); // tEnd = now() + timeForWhichToLock
+  }
+
+  get fun time(): Int { // get how much lock time is left
+      if self.timeLockEnds == null { return 0; }
+      let timeTillLockEnd: Int = self.timeLockEnds!! - now();
+
+      if timeTillLockEnd > 0 { return timeTillLockEnd; } else { return 0; }
+  }
   get fun nft(): Address? { return self.nftAddress; }
   get fun owner(): Address? { return self.prevOwner; }
 }
