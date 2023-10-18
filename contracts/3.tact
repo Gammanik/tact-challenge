@@ -94,8 +94,8 @@ contract Task3 with Deployable {
   }
 
   inline fun change(wantToBuy: Int, t: TokenNotification) { // change b->a b for a; give b.amount take a as ret
-      self.send(wantToBuy, t.from);
       self.updateBalance(wantToBuy, t.amount);
+      self.send(wantToBuy, t.from);
   }
 
   inline fun send(buyAmount: Int, newOwner: Address) {
