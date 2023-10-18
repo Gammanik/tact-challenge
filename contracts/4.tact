@@ -67,6 +67,7 @@ contract Task4 with Deployable {
   }
 
   receive(msg: NftWithdrawal) {
+      require(self.prevOwner != null, "Invalid sender");
       require(sender() == self.prevOwner, "Invalid sender"); // if sender is not the owner (that came from OwnershipAssigned as prevOwner address) then throw "Invalid sender"
 
       if self.hasLocked() {
@@ -83,14 +84,10 @@ contract Task4 with Deployable {
       if timeTillLockEnd > 0 { return timeTillLockEnd; } else { return 0; }
   }
 
-  get fun nft(): Address? { // get the address of the locked nft
-      return self.nftAddress;
+  inline fun hasLocked(): Bool {
+    // return self.timeLockEnds != null && self.timeLockEnds!! > now();
+    return time() > 0;
   }
-
-  // get the owner of the locked nft (that came from OwnershipAssigned as prevOwner)
-  get fun owner(): Address? { return self.prevOwner; }
-
-  inline fun hasLocked(): Bool { return self.timeLockEnds != null && self.timeLockEnds!! > now(); }
 
   inline fun transferBack(prevOwner: Address) {
     // If the smart contract already holds an nft then return the incoming nft back to the sender
@@ -128,4 +125,6 @@ contract Task4 with Deployable {
     self.nftAddress = null;
   }
 
+  get fun nft(): Address? { return self.nftAddress; }
+  get fun owner(): Address? { return self.prevOwner; }
 }
