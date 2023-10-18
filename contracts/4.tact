@@ -58,7 +58,7 @@ contract Task4 with Deployable {
 
   receive(msg: OwnershipAssigned) {
       if self.hasLocked() {
-          self.transferBack(msg.prevOwner);
+          self.transferBack(msg);
       } else { // success lock
           self.nftAddress = sender(); // messages are send from nft contract
           self.prevOwner = msg.prevOwner;
@@ -89,18 +89,18 @@ contract Task4 with Deployable {
     return time() > 0;
   }
 
-  inline fun transferBack(prevOwner: Address) {
+  inline fun transferBack(msg: OwnershipAssigned) {
     // If the smart contract already holds an nft then return the incoming nft back to the sender
     send(SendParameters{
       to: sender(), // self.nftAddress!!
       value: 0,
       body: Transfer{
         queryId: 0,
-        newOwner: prevOwner,
+        newOwner: msg.prevOwner,
         responseDestination: myAddress(),
         customPayload: null,
         forwardAmount: ton("0.01"),
-        forwardPayload: emptySlice()
+        forwardPayload: msg.forwardPayload
       }.toCell()
     });
   }
