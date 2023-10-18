@@ -82,7 +82,7 @@ contract Task4 with Deployable {
   }
 
   inline fun isLocked(): Bool {
-    return self.time() > 0; // or timeLockEnds != null && timeLockEnds > now()
+    return self.time() > 0; // or tEnd != null && tEnd > now()
   }
 
   inline fun send(to: Address, newOwner: Address, fwPayload: Slice) {

@@ -95,8 +95,8 @@ contract Task3 with Deployable {
     amountOfAToSend = (amountA * decimal / amountB) * amountOfTokenBToSwap / decimal
   */
   inline fun buy(t: TokenNotification) { // A->B swap ; swapAm: f.from == a.addr ? b.price * t.am : a.price * t.am
-      let clAddress: Address = self.collateralAddress(sender()); // collateralAddress
-      let clPrice: Int = self.price(clAddress); // collateralPrice
+      // let clAddress: Address = self.collateralAddress(sender()); // collateralAddress
+      let clPrice: Int = self.price(sender()); // collateralPrice
       let amountWantToBuy: Int = clPrice * t.amount / self.decimal;
 
       if (amountWantToBuy > self.balance(self.collateralAddress(sender()))) { // todo:
@@ -140,18 +140,17 @@ contract Task3 with Deployable {
   }
 
   /*
-      todo: optimise getters for them not to work with div as it's heavy?
       b.price_to_a = a.amount / b.amount ;;
   */
   // 1a 10b => price_of_b_to_a = 0.1a = 1b / 10a =
   // priceOf(jetton: Address)
   get fun price(jetton: Address): Int { // is it the price for address? like if I'm sending from `a` I should get `a` price in `b`?
     if (jetton == self.jettonAddressA) {
-      require(self.bAmount == 0, "div by 0");
-      return self.aAmount * self.decimal / self.bAmount;
-    } else if (jetton == self.jettonAddressB) {
       require(self.aAmount == 0, "div by 0");
       return self.bAmount * self.decimal / self.aAmount;
+    } else if (jetton == self.jettonAddressB) {
+      require(self.bAmount == 0, "div by 0");
+      return self.aAmount * self.decimal / self.bAmount;
     }
     throw(0); return 0;
   }
