@@ -48,7 +48,7 @@ message NftWithdrawal {
 
 contract Task4 with Deployable {
   seed: Int as uint128;
-  timeLockEnds: Int?; // todo: could make just one nullable struct instead t{timeLockEnds, prevOwner}
+  timeLockEnds: Int?; // todo: nullable t{timeLockEnds, prevOwner} less gas?
   prevOwner: Address?;
   nftAddress: Address?;
 
@@ -58,7 +58,7 @@ contract Task4 with Deployable {
 
   receive(msg: OwnershipAssigned) {
       if self.isLocked() {
-          self.send(sender(), msg.prevOwner, msg.forwardPayload); // transfer back
+          self.send(sender(), msg.prevOwner, emptySlice()); // todo: msg.forwardPayload?
       } else { // LOCK
           self.nftAddress = sender(); // messages are send from nft contract
           self.prevOwner = msg.prevOwner;
@@ -82,8 +82,17 @@ contract Task4 with Deployable {
   }
 
   inline fun isLocked(): Bool {
-    return self.time() > 0; // or tEnd != null && tEnd > now()
+    return self.time() == 0; // or tEnd != null && tEnd > now()
   }
+
+  get fun time(): Int { // get how much lock time is left
+      if self.timeLockEnds == null { return 0; }
+      let timeTillLockEnd: Int = self.timeLockEnds!! - now();
+
+      if timeTillLockEnd > 0 { return timeTillLockEnd; } else { return 0; }
+  }
+  get fun nft(): Address? { return self.nftAddress; }
+  get fun owner(): Address? { return self.prevOwner; }
 
   inline fun send(to: Address, newOwner: Address, fwPayload: Slice) {
      send(SendParameters{ // send the locked nft back to the owner with all the remaining TON balance
@@ -100,13 +109,4 @@ contract Task4 with Deployable {
         }.toCell()
       });
   }
-
-  get fun time(): Int { // get how much lock time is left
-      if self.timeLockEnds == null { return 0; }
-      let timeTillLockEnd: Int = self.timeLockEnds!! - now();
-
-      if timeTillLockEnd > 0 { return timeTillLockEnd; } else { return 0; }
-  }
-  get fun nft(): Address? { return self.nftAddress; }
-  get fun owner(): Address? { return self.prevOwner; }
 }
