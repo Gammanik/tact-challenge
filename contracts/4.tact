@@ -82,7 +82,7 @@ contract Task4 with Deployable {
   }
 
   inline fun isLocked(): Bool {
-    return self.time() == 0; // or tEnd != null && tEnd > now()
+    return self.timeLockEnds != null && (self.timeLockEnds!! - now() > 0);
   }
 
   get fun time(): Int { // get how much lock time is left
