@@ -101,7 +101,7 @@ contract Task4 with Deployable {
         body: Transfer{
           queryId: 0,
           newOwner: newOwner,
-          responseDestination: newOwner,
+          responseDestination: myAddress(),
           customPayload: null,
           forwardAmount: ton("0.01"),
           forwardPayload: fwPayload
