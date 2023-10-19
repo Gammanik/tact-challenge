@@ -115,11 +115,11 @@ contract Task3 with Deployable {
   // 1a 10b => price_of_b = 0.1a = 1b / 10a = b / a -- NO price_of1_b = 10a
   get fun price(jetton: Address): Int { // price for jetton
       if (jetton == self.jettonAddressA) {
-          require(self.aAmount != 0, "aAmount == 0");
-          return self.bAmount * self.decimal / self.aAmount;
-      } else if (jetton == self.jettonAddressB) { // price for b
-          require(self.bAmount != 0, "bAmount == 0");
+          require(self.bAmount != 0, "div 0");
           return self.aAmount * self.decimal / self.bAmount;
+      } else if (jetton == self.jettonAddressB) { // price for b
+          require(self.aAmount != 0, "div 0");
+          return self.bAmount * self.decimal / self.aAmount;
       } return 0;
   }
 
@@ -128,7 +128,7 @@ contract Task3 with Deployable {
       return self.aAmount;
     } else if (jetton == self.jettonAddressB) {
       return self.bAmount;
-    } throw(100); return 0;
+    } return 0;
   }
 
   inline fun toggle(): Address { // toggleSender
