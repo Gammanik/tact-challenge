@@ -87,20 +87,16 @@ contract Task3 with Deployable {
       let amountOfAToSend: Int = aPricePerOneB * t.amount / self.decimal;
 
       if amountOfAToSend <= self.balance(self.toggle()) { // > a on balance for b->a swap
-          self.change(amountOfAToSend, t);
+          self.updateBalance(amountOfAToSend, t.amount); // change
+          self.send(amountOfAToSend, self.toggle(), t.from);
       } else {
-          self.send(t.amount, t.from); // refund
+          self.send(t.amount, sender(),t.from); // refund
       }
   }
 
-  inline fun change(wantToBuy: Int, t: TokenNotification) { // change b->a b for a; give b.amount take a as ret
-      self.updateBalance(wantToBuy, t.amount);
-      self.send(wantToBuy, t.from);
-  }
-
-  inline fun send(buyAmount: Int, newOwner: Address) {
+  inline fun send(buyAmount: Int, tokenAddress: Address, newOwner: Address) {
       send(SendParameters{
-          to: sender(),
+          to: tokenAddress,
           value: 0,
           mode: SendRemainingValue + SendIgnoreErrors,
           bounce: true,
@@ -134,7 +130,7 @@ contract Task3 with Deployable {
     } throw(100); return 0;
   }
 
-  inline fun toggle(): Address { // to get the price I need collaterall address ; the fun would not be needed if there was ternary operator
+  inline fun toggle(): Address { // toggleSender
     if sender() == self.jettonAddressA { return self.jettonAddressB; }
     return self.jettonAddressA;
   }
