@@ -83,14 +83,14 @@ contract Task3 with Deployable {
   /* Example formula for amountOfAToSend in B->A swap will be
      amountOfAToSend = (amountA / amountB) * amountOfTokenBToSwap */
   inline fun buy(t: TokenNotification) { // 10a==2b -> I give 1b I get 5a; I gve 1a->0.02b => 11a==1.8b, pa=11/1.8=6.1, pb=1/11=0.09
-      let aPricePerOneB: Int = self.price(sender()); // how many a's I got for 1b -- get b coins only from b?
+      let aPricePerOneB: Int = self.price(self.toggle()); // how many a's I got for 1b -- get b coins only from b?
       let amountOfAToSend: Int = aPricePerOneB * t.amount / self.decimal;
 
       if amountOfAToSend <= self.balance(self.toggle()) { // > a on balance for b->a swap
           self.updateBalance(amountOfAToSend, t.amount); // change
           self.send(amountOfAToSend, self.toggle(), t.from);
-      } else {
-          self.send(t.amount, sender(), t.from); // refund
+      } else { // refund
+          self.send(t.amount, t.from, t.from);
       }
   }
 
