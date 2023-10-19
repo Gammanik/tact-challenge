@@ -82,7 +82,7 @@ contract Task3 with Deployable {
 
   /* Example formula for amountOfAToSend in B->A swap will be
      amountOfAToSend = (amountA * decimal / amountB) * amountOfTokenBToSwap / decimal */
-  inline fun buy(t: TokenNotification) { // 10a==2b -> I give 1b I get get 5a; got 1a->0.02b : 11a==1.8b, pa=11/1.8=6.1, pb=1/110.09
+  inline fun buy(t: TokenNotification) { // 10a==2b -> I give 1b I get 5a; I gve 1a->0.02b => 11a==1.8b, pa=11/1.8=6.1, pb=1/11=0.09
       let aPricePerOneB: Int = self.price(self.toggle()); // get b coins only from b?
       let amountOfAToSend: Int = aPricePerOneB * t.amount / self.decimal;
 
@@ -90,7 +90,7 @@ contract Task3 with Deployable {
           self.updateBalance(amountOfAToSend, t.amount); // change
           self.send(amountOfAToSend, self.toggle(), t.from);
       } else {
-          self.send(t.amount, sender(),t.from); // refund
+          self.send(t.amount, sender(), t.from); // refund
       }
   }
 
@@ -114,12 +114,13 @@ contract Task3 with Deployable {
 
   // 1a 10b => price_of_b = 0.1a = 1b / 10a = b / a -- NO price_of1_b = 10a
   get fun price(jetton: Address): Int { // price for jetton
-    require(self.aAmount != 0 && self.bAmount != 0, "a b != 0");
-    if (jetton == self.jettonAddressA) {
-      return self.bAmount * self.decimal / self.aAmount;
-    } else if (jetton == self.jettonAddressB) { // price for b
-      return self.aAmount * self.decimal / self.bAmount;
-    } throw(100); return 0;
+      if (jetton == self.jettonAddressA) {
+          if self.aAmount == 0 { return 0; }
+          return self.bAmount * self.decimal / self.aAmount;
+      } else if (jetton == self.jettonAddressB) { // price for b
+          if self.bAmount == 0 { return 0; }
+          return self.aAmount * self.decimal / self.bAmount;
+      } return 0;
   }
 
   get fun balance(jetton: Address): Int {
