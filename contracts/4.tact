@@ -72,16 +72,16 @@ contract Task4 with Deployable {
       if self.isLocked() {
           self.reply("NFT is still locked".asComment());
       } else { // UNLOCK
-          self.send(sender(), msg.nftAddress, emptySlice());
           // nullify vars
           self.timeLockEnds = null;
           self.prevOwner = null;
           self.nftAddress = null;
+          self.send(msg.nftAddress, sender(), emptySlice());
       }
   }
 
   inline fun isLocked(): Bool {
-    return self.timeLockEnds != null && (self.timeLockEnds!! - now() > 0);
+    return self.timeLockEnds != null && (self.timeLockEnds!! > now());
   }
 
   get fun time(): Int { // get how much lock time is left
