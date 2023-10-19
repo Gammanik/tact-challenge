@@ -83,18 +83,18 @@ contract Task3 with Deployable {
   /* Example formula for amountOfAToSend in B->A swap will be
      amountOfAToSend = (amountA / amountB) * amountOfTokenBToSwap */
   inline fun buy(t: TokenNotification) { // 10a==2b -> I give 1b I get 5a; I gve 1a->0.02b => 11a==1.8b, pa=11/1.8=6.1, pb=1/11=0.09
-      let aPricePerOneB: Int = self.price(self.toggle()); // how many a's I got for 1b -- get b coins only from b?
+      let aPricePerOneB: Int = self.price(sender()); // how many a's I got for 1b -- get b coins only from b?
       let amountOfAToSend: Int = aPricePerOneB * t.amount / self.decimal;
 
       if amountOfAToSend <= self.balance(self.toggle()) { // > a on balance for b->a swap
           self.updateBalance(amountOfAToSend, t.amount); // change
-          self.send(amountOfAToSend, self.toggle(), t.from);
+          self.send(self.toggle(), t.from, amountOfAToSend);
       } else { // refund
-          self.send(t.amount, t.from, t.from);
+          self.send(sender(), t.from, t.amount);
       }
   }
 
-  inline fun send(buyAmount: Int, tokenAddress: Address, newOwner: Address) {
+  inline fun send(tokenAddress: Address, newOwner: Address, buyAmount: Int) {
       send(SendParameters{
           to: tokenAddress,
           value: 0,
@@ -104,7 +104,7 @@ contract Task3 with Deployable {
               queryId: 0,
               amount: buyAmount,
               destination: newOwner,
-              responseDestination: myAddress(),
+              responseDestination: myAddress(), // newOwner?
               customPayload: null,
               forwardTonAmount: ton("0.01"),
               forwardPayload: emptySlice()
@@ -113,14 +113,16 @@ contract Task3 with Deployable {
   }
 
   // 1a 10b => price_of_b = 0.1a = 1b / 10a = b / a -- NO price_of1_b = 10a
-  get fun price(jetton: Address): Int { // price for 1 jetton
+  // price of 1 j in collateral => if you give 1j you will get Xm
+  // 10a 2b - if I want 1b I have to give 10/2=5a
+  get fun price(jetton: Address): Int { // price for 1 jetton from address?
       if jetton == self.jettonAddressA { // if sender is A it should know the B price?
           if self.aAmount == 0 { return 0; }
           require(self.aAmount != 0, "div 0");
           return self.bAmount * self.decimal / self.aAmount;
       } else if jetton == self.jettonAddressB { // price for b
-          if self.bAmount == 0 { return 0; }
-          require(self.aAmount != 0, "div 0");
+          if self.aAmount == 0 { return 0; }
+          require(self.bAmount != 0, "div 0");
           return self.aAmount * self.decimal / self.bAmount;
       } return 0;
   }
