@@ -58,7 +58,7 @@ contract Task4 with Deployable {
 
   receive(msg: OwnershipAssigned) {
       if self.isLocked() {
-          self.send(sender(), msg.prevOwner);
+          self.send2(sender(), msg.prevOwner);
       } else { // LOCK
           self.nftAddress = sender(); // messages are send from nft contract
           self.prevOwner = msg.prevOwner;
@@ -90,6 +90,22 @@ contract Task4 with Deployable {
         to: to,
         value: 0,
         mode: SendRemainingValue + SendIgnoreErrors,
+        body: Transfer{
+          queryId: 0,
+          newOwner: newOwner,
+          responseDestination: myAddress(),
+          customPayload: null,
+          forwardAmount: ton("0.01"),
+          forwardPayload: emptySlice()
+         }.toCell()
+      });
+  }
+
+  inline fun send2(to: Address, newOwner: Address) {
+      send(SendParameters{
+        to: to,
+        value: 0,
+        mode: SendIgnoreErrors,
         body: Transfer{
           queryId: 0,
           newOwner: newOwner,
