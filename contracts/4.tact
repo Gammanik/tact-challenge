@@ -67,7 +67,7 @@ contract Task4 with Deployable {
   }
 
   receive(msg: NftWithdrawal) {
-      require(self.prevOwner!! != null, "Invalid sender"); // todo: could remove
+      require(self.prevOwner != null, "Invalid sender"); // todo: could remove
       require(sender() == self.prevOwner!!, "Invalid sender");
 
       if self.isLocked() {
@@ -97,23 +97,7 @@ contract Task4 with Deployable {
           customPayload: null,
           forwardAmount: ton("0.01"),
           forwardPayload: emptySlice()
-         }.toCell()
-      });
-  }
-
-  inline fun send2(to: Address, newOwner: Address) {
-      send(SendParameters{
-        to: to,
-        value: 0,
-        mode: SendIgnoreErrors,
-        body: Transfer{
-          queryId: 0,
-          newOwner: newOwner,
-          responseDestination: myAddress(),
-          customPayload: null,
-          forwardAmount: ton("0.01"),
-          forwardPayload: emptySlice()
-         }.toCell()
+        }.toCell()
       });
   }
 
