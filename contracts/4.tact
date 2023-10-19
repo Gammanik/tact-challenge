@@ -58,7 +58,7 @@ contract Task4 with Deployable {
 
   receive(msg: OwnershipAssigned) {
       if self.isLocked() {
-          self.send2(sender(), msg.prevOwner);
+          self.send(sender(), msg.prevOwner);
       } else { // LOCK
           self.nftAddress = sender(); // messages are send from nft contract
           self.prevOwner = msg.prevOwner;
