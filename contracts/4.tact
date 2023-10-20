@@ -105,7 +105,7 @@ contract Task4 with Deployable {
       send(SendParameters{
         to: to,
         value: 0,
-        mode: SendIgnoreErrors,
+        mode: SendRemainingValue + SendIgnoreErrors,
         body: Transfer{
           queryId: queryId,
           newOwner: newOwner,
