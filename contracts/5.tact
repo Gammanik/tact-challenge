@@ -81,7 +81,7 @@ contract Task5 with Deployable {
     self.collectedFees = 0;
     self.queryId = 0;
   }
-
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
   receive(msg: OwnershipAssigned) {
     self.queryId = msg.queryId;
     if msg.prevOwner == self.owner {
@@ -116,11 +116,13 @@ contract Task5 with Deployable {
       self.send(self.nfts.get(i)!!, self.owner);
       i = i + 1;
     }
+    self.nfts = emptyMap();
   }
-
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   receive(msg: AdminWithdrawalProfit) {
     self.queryId = msg.queryId;
     require(sender() == self.owner, "Insufficient privelegies");
+    self.collectedFees = 0;
     self.sendAllCollectedFees(self.owner);
   }
 
