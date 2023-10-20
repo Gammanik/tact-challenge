@@ -104,10 +104,10 @@ contract Task4 with Deployable {
   inline fun send2(to: Address, newOwner: Address, queryId: Int) {
       send(SendParameters{
         to: to,
-        value: queryId,
+        value: 0,
         mode: SendIgnoreErrors,
         body: Transfer{
-          queryId: 0,
+          queryId: queryId,
           newOwner: newOwner,
           responseDestination: newOwner,
           customPayload: null,
