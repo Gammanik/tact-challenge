@@ -84,18 +84,22 @@ contract Task5 with Deployable {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
   receive(msg: OwnershipAssigned) {
     self.queryId = msg.queryId;
+
+
+
     if msg.prevOwner == self.owner {
       self.nfts.set(self.nftsCount, sender());
       self.nftsCount = self.nftsCount + 1;
       return;
-    } //todo?   but only in case that TON attached is enough to process refund without losing TONs on the SC's balance
+    }
 
-    if context().value < ton("2.1") { self.send(sender(), msg.prevOwner); return; }
+
+
+    if context().value < ton("2.1") { if context().value > ton("0.08") {self.send(sender(), msg.prevOwner);} return; }
 
     let r: Int = random(0, self.nftsCount);
-    if r == self.nftsCount {
-      self.sendRemaining(sender(), msg.prevOwner);
-    } else {
+    if r == self.nftsCount { self.sendRemaining(sender(), msg.prevOwner); }
+    else {
       self.nfts.set(r, sender());
       self.sendRemaining(self.nfts.get(r)!!, msg.prevOwner);
     }
