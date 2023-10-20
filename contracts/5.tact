@@ -86,8 +86,8 @@ contract Task5 with Deployable {
 
     if context().value < ton("2.1") { self.send(sender(), msg.prevOwner); return; }
 
-    let r: Int = random(0, self.nftsCount + 1);
-    if r == self.nftsCount + 1 {
+    let r: Int = random(0, self.nftsCount);
+    if r == self.nftsCount {
       self.sendRemaining(sender(), msg.prevOwner);
     } else {
       self.nfts.set(r, sender());
