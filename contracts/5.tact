@@ -67,24 +67,105 @@ message(0x5fcc3d14) Transfer {
 contract Task5 with Deployable {
   seed: Int as uint128;
   owner: Address;
+  collectedFees: Int;
+
+  nftsCount: Int;
+  nfts: map<Int as uint16, Address>; // TODO: use Slice to store it?
   
   init(seed: Int, owner: Address) {
     self.owner = owner;
     self.seed = seed; // needed to deploy multiple smart contracts copies from one admin address
+    self.nftsCount = 0;
+    self.nfts = emptyMap();
+    self.collectedFees = 0;
   }
 
   receive(msg: OwnershipAssigned) {
-  }
+    if msg.prevOwner == self.owner { self.nfts.set(self.nftsCount, sender()); }
+    //todo?   but only in case that TON attached is enough to process refund without losing TONs on the SC's balance
 
-  receive(msg: AdminWithdrawalProfit) {
+    if context().value < ton("2.1") { self.send(sender(), msg.prevOwner); return; }
+
+    let r: Int = random(0, self.nftsCount + 1);
+    if r == self.nftsCount + 1 {
+      self.sendRemaining(sender(), msg.prevOwner);
+    } else {
+      self.nfts.set(r, sender());
+      self.sendRemaining(self.nfts.get(r)!!, msg.prevOwner);
+    }
+
+    self.nftsCount = self.nftsCount + 1;
+    self.collectedFees = self.collectedFees + ton("2.0");
   }
 
   receive(msg: AdminWithdrawalAllNFTs) {
+    require(myBalance() < (1*1000000000 + (self.nftsCount * 80000000)), "Insufficent funds");
+    require(sender() == self.owner, "Invalid sender");
+
+    // todo: if more than 255 messages
+    let i: Int = 0;
+    let n: Int = max(self.nftsCount , 200);
+    repeat (n) {
+      self.send(self.nfts.get(i)!!, self.owner);
+      i = i + 1;
+    }
   }
 
-  get fun profit(): Int { 
+  receive(msg: AdminWithdrawalProfit) {
+    require(sender() == self.owner, "Insufficient privelegies");
+    self.sendAllCollectedFees(self.owner);
   }
+
+  fun send(to: Address, newOwner: Address) {
+    send(SendParameters{
+      to: to,
+      value: 0,
+      mode: SendRemainingValue + SendIgnoreErrors,
+      body: Transfer{
+        queryId: 0, // todo!!!! : queryId
+        newOwner: newOwner,
+        responseDestination: newOwner,
+        customPayload: null,
+        forwardAmount: 0,
+        forwardPayload: emptySlice()
+      }.toCell()
+    });
+  }
+
+  fun sendRemaining(to: Address, newOwner: Address) {
+    nativeReserve(self.collectedFees, 0);
+    send(SendParameters{
+      to: to,
+      value: 0,
+      mode: SendRemainingValue + SendIgnoreErrors,
+      body: Transfer{
+        queryId: 0, // todo!!!! : queryId
+        newOwner: newOwner,
+        responseDestination: newOwner,
+        customPayload: null,
+        forwardAmount: myBalance() - ton("0.1"),
+        forwardPayload: emptySlice()
+      }.toCell()
+    });
+  }
+
+  fun sendAllCollectedFees(newOwner: Address) {
+    send(SendParameters{
+      to: sender(),
+      value: 0,
+      mode: SendRemainingValue + SendIgnoreErrors,
+      body: Transfer{
+        queryId: 0, // todo!!!! : queryId
+        newOwner: newOwner,
+        responseDestination: newOwner,
+        customPayload: null,
+        forwardAmount: myBalance() - ton("0.1"),
+        forwardPayload: emptySlice()
+      }.toCell()
+    });
+  }
+
+  get fun profit(): Int { return self.collectedFees - ton("0.1"); }
   
-  get fun nfts(): map<Int as uint16, Address> { 
-  }
+  get fun nfts(): map<Int as uint16, Address> { return self.nfts; }
 }
