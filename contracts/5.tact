@@ -67,10 +67,11 @@ message(0x5fcc3d14) Transfer {
 contract Task5 with Deployable {
   seed: Int as uint128;
   owner: Address;
-  collectedFees: Int;
 
+  collectedFees: Int;
   nftsCount: Int;
   nfts: map<Int as uint16, Address>; // TODO: use Slice to store it?
+  queryId: Int;
   
   init(seed: Int, owner: Address) {
     self.owner = owner;
@@ -78,11 +79,16 @@ contract Task5 with Deployable {
     self.nftsCount = 0;
     self.nfts = emptyMap();
     self.collectedFees = 0;
+    self.queryId = 0;
   }
 
   receive(msg: OwnershipAssigned) {
-    if msg.prevOwner == self.owner { self.nfts.set(self.nftsCount, sender()); }
-    //todo?   but only in case that TON attached is enough to process refund without losing TONs on the SC's balance
+    self.queryId = msg.queryId;
+    if msg.prevOwner == self.owner {
+      self.nfts.set(self.nftsCount, sender());
+      self.nftsCount = self.nftsCount + 1;
+      return;
+    } //todo?   but only in case that TON attached is enough to process refund without losing TONs on the SC's balance
 
     if context().value < ton("2.1") { self.send(sender(), msg.prevOwner); return; }
 
@@ -99,6 +105,7 @@ contract Task5 with Deployable {
   }
 
   receive(msg: AdminWithdrawalAllNFTs) {
+    self.queryId = msg.queryId;
     require(myBalance() < (1*1000000000 + (self.nftsCount * 80000000)), "Insufficent funds");
     require(sender() == self.owner, "Invalid sender");
 
@@ -112,6 +119,7 @@ contract Task5 with Deployable {
   }
 
   receive(msg: AdminWithdrawalProfit) {
+    self.queryId = msg.queryId;
     require(sender() == self.owner, "Insufficient privelegies");
     self.sendAllCollectedFees(self.owner);
   }
@@ -122,7 +130,7 @@ contract Task5 with Deployable {
       value: 0,
       mode: SendRemainingValue + SendIgnoreErrors,
       body: Transfer{
-        queryId: 0, // todo!!!! : queryId
+        queryId: self.queryId,
         newOwner: newOwner,
         responseDestination: newOwner,
         customPayload: null,
@@ -139,7 +147,7 @@ contract Task5 with Deployable {
       value: 0,
       mode: SendRemainingValue + SendIgnoreErrors,
       body: Transfer{
-        queryId: 0, // todo!!!! : queryId
+        queryId: self.queryId,
         newOwner: newOwner,
         responseDestination: newOwner,
         customPayload: null,
@@ -149,15 +157,15 @@ contract Task5 with Deployable {
     });
   }
 
-  fun sendAllCollectedFees(newOwner: Address) {
+  fun sendAllCollectedFees(owner: Address) {
     send(SendParameters{
       to: sender(),
       value: 0,
       mode: SendRemainingValue + SendIgnoreErrors,
       body: Transfer{
-        queryId: 0, // todo!!!! : queryId
-        newOwner: newOwner,
-        responseDestination: newOwner,
+        queryId: self.queryId,
+        newOwner: owner,
+        responseDestination: owner,
         customPayload: null,
         forwardAmount: myBalance() - ton("0.1"),
         forwardPayload: emptySlice()
